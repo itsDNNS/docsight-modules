@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["modules"],
+  "properties": {
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "author", "repo", "version", "minAppVersion", "type"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.]+$",
+            "description": "Unique module ID (e.g., community.pingtest)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable module name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what the module does"
+          },
+          "author": {
+            "type": "string",
+            "description": "GitHub username of the module author"
+          },
+          "repo": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the module's GitHub repository"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "description": "Semantic version (e.g., 1.0.0)"
+          },
+          "minAppVersion": {
+            "type": "string",
+            "description": "Minimum DOCSight version required (e.g., 2026.2)"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["driver", "integration", "analysis", "theme"],
+            "description": "Module type"
+          },
+          "verified": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the module has been reviewed by the DOCSight team"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
