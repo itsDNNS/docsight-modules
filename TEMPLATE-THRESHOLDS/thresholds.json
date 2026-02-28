@@ -1,0 +1,45 @@
+{
+  "_meta": {
+    "region": "YOUR_REGION",
+    "operator": "YOUR_ISP",
+    "docsis_variant": "eurodocsis or us-docsis",
+    "source": "https://link-to-your-source",
+    "notes": "Describe where these values come from"
+  },
+
+  "downstream_power": {
+    "_comment": "Power in dBmV. Each level is [min, max]. Add modulations your ISP uses.",
+    "_default": "256QAM",
+    "64QAM":   { "good": [-10, 7],  "warning": [-12, 12], "critical": [-14, 14] },
+    "256QAM":  { "good": [-4, 13],  "warning": [-6, 18],  "critical": [-8, 20] },
+    "1024QAM": { "good": [-2, 15],  "warning": [-4, 20],  "critical": [-6, 22] },
+    "4096QAM": { "good": [-2, 15],  "warning": [-4, 20],  "critical": [-6, 22] }
+  },
+
+  "upstream_power": {
+    "_comment": "sc_qam = SC-QAM/ATDMA channels, ofdma = OFDMA channels (DOCSIS 3.1+).",
+    "_default": "sc_qam",
+    "sc_qam": { "good": [41, 47], "warning": [37, 51], "critical": [35, 53] },
+    "ofdma":  { "good": [44, 47], "warning": [40, 48], "critical": [38, 50] }
+  },
+
+  "snr": {
+    "_comment": "SNR/MER in dB (absolute). Only lower bounds (higher is better).",
+    "_default": "256QAM",
+    "64QAM":   { "good_min": 27, "warning_min": 25, "critical_min": 24 },
+    "256QAM":  { "good_min": 33, "warning_min": 31, "critical_min": 30 },
+    "1024QAM": { "good_min": 39, "warning_min": 37, "critical_min": 36 },
+    "4096QAM": { "good_min": 40, "warning_min": 38, "critical_min": 36 }
+  },
+
+  "upstream_modulation": {
+    "_comment": "QAM order below these values triggers health warnings. Optional section.",
+    "critical_max_qam": 4,
+    "warning_max_qam": 16
+  },
+
+  "errors": {
+    "_comment": "Uncorrectable codeword error rate in percent. Optional section.",
+    "uncorrectable_pct": { "warning": 1.0, "critical": 3.0 }
+  }
+}

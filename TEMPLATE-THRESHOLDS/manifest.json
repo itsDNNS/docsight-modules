@@ -1,0 +1,12 @@
+{
+  "id": "community.thresholds_CHANGEME",
+  "name": "CHANGEME Thresholds",
+  "description": "Signal thresholds for CHANGEME cable networks",
+  "version": "1.0.0",
+  "author": "YOUR_NAME",
+  "minAppVersion": "2026.3",
+  "type": "driver",
+  "contributes": {
+    "thresholds": "thresholds.json"
+  }
+}

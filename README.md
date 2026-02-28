@@ -275,6 +275,34 @@ Adds a tab to the main dashboard view switcher.
 
 Adds a card widget to the dashboard overview.
 
+### `thresholds` — Signal Threshold Profile
+
+```json
+"contributes": { "thresholds": "thresholds.json" }
+```
+
+A threshold module provides regional signal quality thresholds for DOCSight's health assessment. Only one threshold profile can be active at a time — enabling a new one automatically disables the previous one.
+
+Use the [`TEMPLATE-THRESHOLDS/`](TEMPLATE-THRESHOLDS/) directory as a starting point.
+
+#### Required Sections
+
+The `thresholds.json` file must contain these three sections, each with a `_default` key:
+
+| Section | Keys | Format |
+|---------|------|--------|
+| `downstream_power` | Modulation names (e.g., `256QAM`, `4096QAM`) | `{ "good": [min, max], "warning": [min, max], "critical": [min, max] }` |
+| `upstream_power` | Channel types: `sc_qam`, `ofdma` | Same `[min, max]` array format |
+| `snr` | Modulation names | `{ "good_min": N, "warning_min": N, "critical_min": N }` |
+
+#### Optional Sections
+
+| Section | Purpose |
+|---------|---------|
+| `_meta` | Metadata (`region`, `operator`, `docsis_variant`, `source`, `notes`) |
+| `upstream_modulation` | QAM order thresholds (`critical_max_qam`, `warning_max_qam`) |
+| `errors` | Uncorrectable error rate (`uncorrectable_pct: { warning: %, critical: % }`) |
+
 ### `static` — CSS & JavaScript
 
 ```json
@@ -405,6 +433,7 @@ These built-in DOCSight modules serve as examples:
 | [Weather](https://github.com/itsDNNS/docsight/tree/main/app/modules/weather) | integration | collector, routes, settings, i18n | Full |
 | [Backup](https://github.com/itsDNNS/docsight/tree/main/app/modules/backup) | integration | collector, routes, settings, i18n | Full |
 | [MQTT](https://github.com/itsDNNS/docsight/tree/main/app/modules/mqtt) | integration | publisher, settings, i18n | Publisher |
+| [VFKD Thresholds](https://github.com/itsDNNS/docsight/tree/main/app/modules/thresholds_vfkd) | driver | thresholds | Minimal |
 
 ---
 
