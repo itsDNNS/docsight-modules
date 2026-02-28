@@ -1,0 +1,18 @@
+{
+  "id": "community.example",
+  "name": "Example Module",
+  "description": "A minimal example module — copy this and customize",
+  "version": "0.1.0",
+  "author": "your-github-username",
+  "minAppVersion": "2026.2",
+  "type": "integration",
+  "contributes": {
+    "routes": "routes.py",
+    "i18n": "i18n/"
+  },
+  "menu": {
+    "label_key": "community.example.title",
+    "icon": "puzzle",
+    "order": 50
+  }
+}
