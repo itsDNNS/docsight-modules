@@ -3,7 +3,7 @@
   "modules": [
     {
       "id": "community.thresholds_vfkd_community",
-      "name": "VFKD Thresholds (Community)",
+      "name": "VF Kabel Forum Thresholds",
       "description": "Signal thresholds derived from the vodafonekabelforum.de community guidelines. More lenient than the official Vodafone spec profile shipped with DOCSight.",
       "author": "itsDNNS",
       "repo": "https://github.com/itsDNNS/docsight-modules",
