@@ -55,7 +55,10 @@ def _open_session(cfg):
 @bp.route("/udm-wan")
 @require_auth
 def dashboard():
-    return render_template("udm_wan_standalone.html")
+    from app.i18n import get_translations  # noqa: PLC0415
+    lang = (_cfg().get("language") or "en") if _cfg() else "en"
+    t = get_translations(lang)
+    return render_template("udm_wan_standalone.html", t=t)
 
 # ── API: cached status ──────────────────────────────────────────────────────────
 
