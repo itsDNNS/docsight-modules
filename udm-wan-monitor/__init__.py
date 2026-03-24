@@ -1,1 +1,1 @@
-# UDM WAN Monitor — DOCSight Community Module v2
+# UDM WAN Monitor — DOCSight Community Module

@@ -202,7 +202,6 @@
 
 <script>
 (function () {
-  function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
   async function udmWanTest() {
     var btn = document.getElementById('udm-test-btn');
     var res = document.getElementById('udm-test-result');
@@ -214,9 +213,6 @@
       var r = await fetch('/api/udm-wan/test', { method: 'POST' });
       var d = await r.json();
       if (d.ok) {
-        var w1 = d.wan1 || {};
-        var w2 = d.wan2 || {};
-        var fmt = function(label, w) { return esc(label) + ': ' + (w.up ? '✅ UP' : '❌ DOWN') + (w.ip ? ' (' + esc(w.ip) + ')' : ''); };
         res.textContent = '';
         var icon = document.createElement('i');
         icon.setAttribute('data-lucide', 'check-circle');

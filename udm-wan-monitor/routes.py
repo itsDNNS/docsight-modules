@@ -86,7 +86,7 @@ def api_detail():
         from .collector import _fetch_udm_device, parse_device  # noqa: PLC0415
         device   = _fetch_udm_device(session, cfg)
         parsed   = parse_device(device)
-    except req.exceptions.ConnectionError as exc:
+    except req.exceptions.ConnectionError:
         return jsonify({"ok": False, "error": "Connection failed"}), 502
     except req.exceptions.Timeout:
         return jsonify({"ok": False, "error": "Timeout"}), 504
@@ -157,7 +157,7 @@ def api_test():
             "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             **parsed,
         })
-    except req.exceptions.ConnectionError as exc:
+    except req.exceptions.ConnectionError:
         return jsonify({"ok": False, "error": "Connection failed"}), 502
     except req.exceptions.Timeout:
         return jsonify({"ok": False, "error": "Timeout"}), 504
