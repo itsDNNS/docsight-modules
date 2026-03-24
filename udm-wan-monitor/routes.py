@@ -56,7 +56,8 @@ def _open_session(cfg):
 @require_auth
 def dashboard():
     from app.i18n import get_translations  # noqa: PLC0415
-    lang = (_cfg().get("language") or "en") if _cfg() else "en"
+    c = _cfg()
+    lang = (c.get("language") or "en") if c else "en"
     t = get_translations(lang)
     return render_template("udm_wan_standalone.html", t=t)
 
