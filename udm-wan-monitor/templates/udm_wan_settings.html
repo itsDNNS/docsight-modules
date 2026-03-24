@@ -1,0 +1,251 @@
+{#
+  UDM WAN Monitor — Settings Panel
+  Uses the exact DOCSight settings UI classes from settings.css:
+  settings-panel, settings-card glass, card-header, card-title-group,
+  card-icon, toggle-row, toggle, form-grid cols-2, form-field,
+  form-input, form-label, form-hint, btn btn-ghost btn-sm, test-result
+#}
+
+<div class="settings-panel" id="panel-mod-community_udm_wan_monitor">
+  <div class="settings-card glass">
+
+    {# ── Card header ───────────────────────────────────────────────── #}
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-icon blue">
+          <i data-lucide="router"></i>
+        </div>
+        <div>
+          <div class="card-title">
+            {{ t.get('community.udm_wan_monitor.settings_title', 'Ubiquiti UDM WAN-Monitor') }}
+          </div>
+          <div class="card-subtitle">
+            {{ t.get('community.udm_wan_monitor.settings_subtitle', 'WAN1 & WAN2 überwachen · Events im globalen Log · UDM Pro / UDM SE') }}
+          </div>
+        </div>
+      </div>
+      <a href="/udm-wan" class="btn btn-ghost btn-sm" style="text-decoration:none; gap:6px;">
+        <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i>
+        {{ t.get('community.udm_wan_monitor.open_dashboard', 'Dashboard') }}
+      </a>
+    </div>
+
+    {# ── Enable toggle ─────────────────────────────────────────────── #}
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <span class="toggle-title">
+          {{ t.get('community.udm_wan_monitor.enabled', 'UDM WAN-Monitor aktivieren') }}
+        </span>
+        <span class="toggle-desc">
+          {{ t.get('community.udm_wan_monitor.enabled_hint', 'Startet die Überwachung und schreibt WAN-Events in das globale DOCSight-Ereignislog.') }}
+        </span>
+      </div>
+      <input type="hidden" name="udm_wan_enabled" value="false">
+      <label class="toggle">
+        <input type="checkbox" id="udm_wan_enabled" name="udm_wan_enabled"
+               value="true" {% if config.udm_wan_enabled %}checked{% endif %}>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    {# ── Connection fields ─────────────────────────────────────────── #}
+    <div class="form-grid cols-2" style="margin-top: var(--space-md);">
+
+      <div class="form-field" style="grid-column: 1 / -1;">
+        <label class="form-label" for="udm_wan_host">
+          {{ t.get('community.udm_wan_monitor.host', 'UDM Host / IP-Adresse') }}
+        </label>
+        <input class="form-input" type="text" id="udm_wan_host" name="udm_wan_host"
+               value="{{ config.udm_wan_host }}" placeholder="192.168.1.1"
+               autocomplete="off">
+        <span class="form-hint">
+          {{ t.get('community.udm_wan_monitor.host_hint', 'IP-Adresse oder Hostname der UDM Pro (HTTPS, Standard-Port 443)') }}
+        </span>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="udm_wan_username">
+          {{ t.get('community.udm_wan_monitor.username', 'Benutzername') }}
+        </label>
+        <input class="form-input" type="text" id="udm_wan_username" name="udm_wan_username"
+               value="{{ config.udm_wan_username }}" placeholder="admin"
+               autocomplete="off">
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="udm_wan_password">
+          {{ t.get('community.udm_wan_monitor.password', 'Passwort') }}
+        </label>
+        <input class="form-input" type="password" id="udm_wan_password" name="udm_wan_password"
+               value="" placeholder="{% if config.udm_wan_password %}(saved){% else %}••••••••{% endif %}"
+               autocomplete="new-password">
+        <span class="form-hint">
+          {{ t.get('community.udm_wan_monitor.password_hint', 'Wird verschlüsselt in der DOCSight-Konfiguration gespeichert.') }}
+        </span>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="udm_wan_port">
+          {{ t.get('community.udm_wan_monitor.port', 'HTTPS-Port') }}
+        </label>
+        <input class="form-input" type="number" id="udm_wan_port" name="udm_wan_port"
+               value="{{ config.udm_wan_port or 443 }}" min="1" max="65535" placeholder="443">
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="udm_wan_site">
+          {{ t.get('community.udm_wan_monitor.site', 'UniFi-Site-Name') }}
+        </label>
+        <input class="form-input" type="text" id="udm_wan_site" name="udm_wan_site"
+               value="{{ config.udm_wan_site or 'default' }}" placeholder="default">
+        <span class="form-hint">
+          {{ t.get('community.udm_wan_monitor.site_hint', 'In der Regel "default", außer bei mehreren UniFi-Sites.') }}
+        </span>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="udm_wan_interval">
+          {{ t.get('community.udm_wan_monitor.interval', 'Abfrageintervall (Sekunden)') }}
+        </label>
+        <input class="form-input" type="number" id="udm_wan_interval" name="udm_wan_interval"
+               value="{{ config.udm_wan_interval or 60 }}" min="15" max="3600" placeholder="60">
+        <span class="form-hint">
+          {{ t.get('community.udm_wan_monitor.interval_hint', 'Wie oft der WAN-Status geprüft wird. Minimum: 15 s.') }}
+        </span>
+      </div>
+
+    </div>
+
+    {# ── SSL toggle ────────────────────────────────────────────────── #}
+    <div class="toggle-row" style="margin-top: var(--space-sm);">
+      <div class="toggle-info">
+        <span class="toggle-title">
+          {{ t.get('community.udm_wan_monitor.verify_ssl', 'SSL-Zertifikat prüfen') }}
+        </span>
+        <span class="toggle-desc">
+          {{ t.get('community.udm_wan_monitor.verify_ssl_hint', 'Deaktivieren für selbst-signierte UDM-Zertifikate (empfohlen).') }}
+        </span>
+      </div>
+      <input type="hidden" name="udm_wan_verify_ssl" value="false">
+      <label class="toggle">
+        <input type="checkbox" id="udm_wan_verify_ssl" name="udm_wan_verify_ssl"
+               value="true" {% if config.udm_wan_verify_ssl %}checked{% endif %}>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    {# ── Optional extra ports ──────────────────────────────────────── #}
+    <div style="margin-top: var(--space-xl);">
+      <div class="section-label">
+        <i data-lucide="ethernet-port" style="width:14px;height:14px;"></i>
+        {{ t.get('community.udm_wan_monitor.extra_ports_title', 'Optionale zusätzliche Ports') }}
+      </div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:var(--space-md);">
+        {{ t.get('community.udm_wan_monitor.extra_ports_hint', 'Bis zu zwei weitere Ports überwachen (z.B. ein SFP+-Port als dritter WAN-Uplink). Interface-Name wie "eth7", Alias frei wählbar. Leer lassen um zu deaktivieren.') }}
+      </p>
+
+      <div class="form-grid cols-2">
+        <div class="form-field">
+          <label class="form-label" for="udm_wan_extra_port1_ifname">
+            {{ t.get('community.udm_wan_monitor.extra_port1_ifname', 'Zusatz-Port 1 — Interface') }}
+          </label>
+          <input class="form-input" type="text" id="udm_wan_extra_port1_ifname"
+                 name="udm_wan_extra_port1_ifname"
+                 value="{{ config.udm_wan_extra_port1_ifname }}"
+                 placeholder="eth7">
+          <span class="form-hint">{{ t.get('community.udm_wan_monitor.extra_port_ifname_hint', 'Interface-Name, z.B. eth7') }}</span>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="udm_wan_extra_port1_alias">
+            {{ t.get('community.udm_wan_monitor.extra_port1_alias', 'Zusatz-Port 1 — Alias') }}
+          </label>
+          <input class="form-input" type="text" id="udm_wan_extra_port1_alias"
+                 name="udm_wan_extra_port1_alias"
+                 value="{{ config.udm_wan_extra_port1_alias }}"
+                 placeholder="WAN 3 (Backup)">
+          <span class="form-hint">{{ t.get('community.udm_wan_monitor.extra_port_alias_hint', 'Anzeigename im Dashboard') }}</span>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="udm_wan_extra_port2_ifname">
+            {{ t.get('community.udm_wan_monitor.extra_port2_ifname', 'Zusatz-Port 2 — Interface') }}
+          </label>
+          <input class="form-input" type="text" id="udm_wan_extra_port2_ifname"
+                 name="udm_wan_extra_port2_ifname"
+                 value="{{ config.udm_wan_extra_port2_ifname }}"
+                 placeholder="eth6">
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="udm_wan_extra_port2_alias">
+            {{ t.get('community.udm_wan_monitor.extra_port2_alias', 'Zusatz-Port 2 — Alias') }}
+          </label>
+          <input class="form-input" type="text" id="udm_wan_extra_port2_alias"
+                 name="udm_wan_extra_port2_alias"
+                 value="{{ config.udm_wan_extra_port2_alias }}"
+                 placeholder="WAN 4 (LTE)">
+        </div>
+      </div>
+    </div>
+
+    {# ── Test connection ────────────────────────────────────────────── #}
+    <div class="btn-row" style="margin-top: var(--space-lg);">
+      <button type="button" class="btn btn-ghost btn-sm" id="udm-test-btn"
+              onclick="udmWanTest()">
+        <i data-lucide="plug-zap" style="width:14px;height:14px;"></i>
+        {{ t.get('community.udm_wan_monitor.test_connection', 'Verbindung testen') }}
+      </button>
+    </div>
+    <div class="test-result" id="udm-test-result"></div>
+
+  </div><!-- /settings-card -->
+</div><!-- /settings-panel -->
+
+<script>
+(function () {
+  async function udmWanTest() {
+    var btn = document.getElementById('udm-test-btn');
+    var res = document.getElementById('udm-test-result');
+    btn.disabled = true;
+    res.className = 'test-result';
+    res.style.display = 'none';
+
+    try {
+      var r = await fetch('/api/udm-wan/test', { method: 'POST' });
+      var d = await r.json();
+      if (d.ok) {
+        res.textContent = '';
+        var icon = document.createElement('i');
+        icon.setAttribute('data-lucide', 'check-circle');
+        icon.style.cssText = 'width:16px;height:16px;flex-shrink:0;';
+        res.appendChild(icon);
+        var span = document.createElement('span');
+        span.textContent = 'Connected';
+        res.appendChild(span);
+        res.className = 'test-result test-ok';
+      } else {
+        res.textContent = '';
+        var icon = document.createElement('i');
+        icon.setAttribute('data-lucide', 'x-circle');
+        icon.style.cssText = 'width:16px;height:16px;flex-shrink:0;';
+        res.appendChild(icon);
+        var span = document.createElement('span');
+        span.textContent = d.error || 'Unknown error';
+        res.appendChild(span);
+        res.className = 'test-result test-fail';
+      }
+      res.style.display = 'flex';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch (e) {
+      res.textContent = '';
+      var span = document.createElement('span');
+      span.textContent = 'Request failed';
+      res.appendChild(span);
+      res.className = 'test-result test-fail';
+      res.style.display = 'flex';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  window.udmWanTest = udmWanTest;
+})();
+</script>

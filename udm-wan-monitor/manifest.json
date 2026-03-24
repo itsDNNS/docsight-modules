@@ -1,0 +1,36 @@
+{
+  "id": "community.udm_wan_monitor",
+  "name": "UDM WAN-Monitor",
+  "description": "Überwacht WAN1 und WAN2 einer Ubiquiti UDM Pro und erzeugt Events im globalen DOCSight-Log.",
+  "version": "3.1.1",
+  "author": "Oggy512",
+  "minAppVersion": "2026.2",
+  "type": "integration",
+  "license": "MIT",
+  "contributes": {
+    "routes":   "routes.py",
+    "collector": "collector.py:UdmWanCollector",
+    "settings": "templates/udm_wan_settings.html",
+    "tab":      "templates/udm_wan_tab.html",
+    "i18n":     "i18n/"
+  },
+  "menu": {
+    "label_key": "community.udm_wan_monitor.nav_title",
+    "icon":      "router",
+    "order":     45
+  },
+  "config": {
+    "udm_wan_enabled":             false,
+    "udm_wan_host":                "",
+    "udm_wan_port":                443,
+    "udm_wan_username":            "",
+    "udm_wan_password":            "",
+    "udm_wan_site":                "default",
+    "udm_wan_verify_ssl":          false,
+    "udm_wan_interval":            60,
+    "udm_wan_extra_port1_ifname":  "",
+    "udm_wan_extra_port1_alias":   "",
+    "udm_wan_extra_port2_ifname":  "",
+    "udm_wan_extra_port2_alias":   ""
+  }
+}
