@@ -1,5 +1,5 @@
 """
-UDM WAN Monitor — Flask Routes  v4
+UDM WAN Monitor — Flask Routes  v3.1.1
 
   GET  /udm-wan                 → Standalone dashboard page
   GET  /api/udm-wan/status      → Latest cached data (JSON)
@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 
 import requests as req
 from flask import Blueprint, jsonify, render_template
+
+from app.web import require_auth
 
 logger = logging.getLogger("docsight.udm_wan_monitor")
 
@@ -51,12 +53,14 @@ def _open_session(cfg):
 # ── Pages ──────────────────────────────────────────────────────────────────────
 
 @bp.route("/udm-wan")
+@require_auth
 def dashboard():
     return render_template("udm_wan_standalone.html")
 
 # ── API: cached status ──────────────────────────────────────────────────────────
 
 @bp.route("/api/udm-wan/status")
+@require_auth
 def api_status():
     c = _collector()
     if c is None or not c.is_enabled():
@@ -69,12 +73,13 @@ def api_status():
 # ── API: full live detail ───────────────────────────────────────────────────────
 
 @bp.route("/api/udm-wan/detail")
+@require_auth
 def api_detail():
     cfg = _build_cfg()
     if not cfg["host"]:
-        return jsonify({"ok": False, "error": "Host nicht konfiguriert"}), 400
+        return jsonify({"ok": False, "error": "Host not configured"}), 400
     if not cfg["enabled"]:
-        return jsonify({"ok": False, "error": "Modul nicht aktiviert"}), 403
+        return jsonify({"ok": False, "error": "Module not enabled"}), 403
 
     try:
         session  = _open_session(cfg)
@@ -82,12 +87,12 @@ def api_detail():
         device   = _fetch_udm_device(session, cfg)
         parsed   = parse_device(device)
     except req.exceptions.ConnectionError as exc:
-        return jsonify({"ok": False, "error": f"Verbindung fehlgeschlagen: {exc}"}), 502
+        return jsonify({"ok": False, "error": "Connection failed"}), 502
     except req.exceptions.Timeout:
         return jsonify({"ok": False, "error": "Timeout"}), 504
-    except Exception as exc:  # noqa: BLE001
+    except Exception:  # noqa: BLE001
         logger.exception("UDM detail fetch failed")
-        return jsonify({"ok": False, "error": str(exc)}), 500
+        return jsonify({"ok": False, "error": "Internal error"}), 500
 
     # ── Optional extra ports from config ────────────────────────────────────────
     c = _cfg()
@@ -137,10 +142,11 @@ def api_detail():
 # ── API: connection test ────────────────────────────────────────────────────────
 
 @bp.route("/api/udm-wan/test", methods=["POST"])
+@require_auth
 def api_test():
     cfg = _build_cfg()
     if not cfg["host"]:
-        return jsonify({"ok": False, "error": "Host nicht konfiguriert"}), 400
+        return jsonify({"ok": False, "error": "Host not configured"}), 400
     try:
         session = _open_session(cfg)
         from .collector import _fetch_udm_device, parse_device  # noqa: PLC0415
@@ -152,9 +158,9 @@ def api_test():
             **parsed,
         })
     except req.exceptions.ConnectionError as exc:
-        return jsonify({"ok": False, "error": f"Verbindung fehlgeschlagen: {exc}"}), 502
+        return jsonify({"ok": False, "error": "Connection failed"}), 502
     except req.exceptions.Timeout:
         return jsonify({"ok": False, "error": "Timeout"}), 504
-    except Exception as exc:  # noqa: BLE001
+    except Exception:  # noqa: BLE001
         logger.exception("UDM WAN test failed")
-        return jsonify({"ok": False, "error": str(exc)}), 500
+        return jsonify({"ok": False, "error": "Internal error"}), 500

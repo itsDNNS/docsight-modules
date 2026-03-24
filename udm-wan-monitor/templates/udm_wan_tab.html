@@ -351,6 +351,8 @@ const REFRESH_MS = 30_000;
 let _timer = null;
 
 const f   = (v,fb='—') => (v!==null&&v!==undefined&&v!=='') ? String(v) : fb;
+const esc = s => { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; };
+const fe  = (v,fb='—') => esc(f(v,fb));
 const el  = id => document.getElementById(id);
 const txt = (id,v) => { const e=el(id); if(e) e.textContent=f(v); };
 
@@ -444,23 +446,23 @@ function fillDevice(dev) {
 function fillPorts(ports) {
   const tbody=el('port-tbody'); if(!tbody) return;
   if(!ports||!ports.length){
-    tbody.innerHTML=`<tr><td colspan="13" class="t-empty">${L.no_ports}</td></tr>`; return;
+    tbody.innerHTML='<tr><td colspan="13" class="t-empty">'+esc(L.no_ports)+'</td></tr>'; return;
   }
-  tbody.innerHTML=ports.map(p=>`<tr>
-    <td><strong style="font-family:inherit;">${f(p.label||p.name)}</strong></td>
-    <td>${f(p.ifname)}</td>
-    <td class="${p.up?'t-up':'t-dn'}">${p.up?'▲ '+L.up:'▼ '+L.down}</td>
-    <td>${fSpd(p.speed)}</td>
-    <td>${p.full_duplex!=null?(p.full_duplex?'Full':'Half'):'—'}</td>
-    <td>${fBytes(p.rx_bytes_r)}/s</td>
-    <td>${fBytes(p.tx_bytes_r)}/s</td>
-    <td>${fBytes(p.rx_bytes)}</td>
-    <td>${fBytes(p.tx_bytes)}</td>
-    <td>${f(p.rx_errors,'0')}</td>
-    <td>${f(p.tx_errors,'0')}</td>
-    <td>${f(p.rx_dropped,'0')}</td>
-    <td>${f(p.tx_dropped,'0')}</td>
-  </tr>`).join('');
+  tbody.innerHTML=ports.map(function(p){ return '<tr>'
+    +'<td><strong style="font-family:inherit;">'+fe(p.label||p.name)+'</strong></td>'
+    +'<td>'+fe(p.ifname)+'</td>'
+    +'<td class="'+(p.up?'t-up':'t-dn')+'">'+(p.up?'▲ '+esc(L.up):'▼ '+esc(L.down))+'</td>'
+    +'<td>'+fSpd(p.speed)+'</td>'
+    +'<td>'+(p.full_duplex!=null?(p.full_duplex?'Full':'Half'):'—')+'</td>'
+    +'<td>'+fBytes(p.rx_bytes_r)+'/s</td>'
+    +'<td>'+fBytes(p.tx_bytes_r)+'/s</td>'
+    +'<td>'+fBytes(p.rx_bytes)+'</td>'
+    +'<td>'+fBytes(p.tx_bytes)+'</td>'
+    +'<td>'+fe(p.rx_errors,'0')+'</td>'
+    +'<td>'+fe(p.tx_errors,'0')+'</td>'
+    +'<td>'+fe(p.rx_dropped,'0')+'</td>'
+    +'<td>'+fe(p.tx_dropped,'0')+'</td>'
+    +'</tr>'; }).join('');
 }
 
 async function refreshEvents() {
@@ -470,19 +472,19 @@ async function refreshEvents() {
     const tbody=el('ev-tbody'), cnt=el('ev-count'); if(!tbody) return;
     const evs=d.events||[];
     if(!evs.length){
-      tbody.innerHTML=`<tr><td colspan="3" class="t-empty">${L.no_events}</td></tr>`;
+      tbody.innerHTML='<tr><td colspan="3" class="t-empty">'+esc(L.no_events)+'</td></tr>';
       if(cnt) cnt.textContent=''; return;
     }
     if(cnt) cnt.textContent=evs.length+' '+L.entries;
-    tbody.innerHTML=evs.map(ev=>{
-      const ts=new Date(ev.timestamp).toLocaleString();
-      const sev=ev.severity||'info';
-      const cls=sev==='critical'?'ev-crit':sev==='warning'?'ev-warn':'ev-info';
-      return `<tr>
-        <td style="white-space:nowrap;">${ts}</td>
-        <td>${ev.message}</td>
-        <td><span class="ev-badge ${cls}">${sev}</span></td>
-      </tr>`;
+    tbody.innerHTML=evs.map(function(ev){
+      var ts=esc(new Date(ev.timestamp).toLocaleString());
+      var sev=ev.severity||'info';
+      var cls=sev==='critical'?'ev-crit':sev==='warning'?'ev-warn':'ev-info';
+      return '<tr>'
+        +'<td style="white-space:nowrap;">'+ts+'</td>'
+        +'<td>'+esc(ev.message||'')+'</td>'
+        +'<td><span class="ev-badge '+cls+'">'+esc(sev)+'</span></td>'
+        +'</tr>';
     }).join('');
   } catch(e){ console.warn('[UDM WAN] events error',e); }
 }

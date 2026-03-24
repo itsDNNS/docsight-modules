@@ -77,7 +77,7 @@
           {{ t.get('community.udm_wan_monitor.password', 'Passwort') }}
         </label>
         <input class="form-input" type="password" id="udm_wan_password" name="udm_wan_password"
-               value="{{ config.udm_wan_password }}" placeholder="••••••••"
+               value="" placeholder="{% if config.udm_wan_password %}(saved){% else %}••••••••{% endif %}"
                autocomplete="new-password">
         <span class="form-hint">
           {{ t.get('community.udm_wan_monitor.password_hint', 'Wird verschlüsselt in der DOCSight-Konfiguration gespeichert.') }}
@@ -202,33 +202,48 @@
 
 <script>
 (function () {
+  function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
   async function udmWanTest() {
-    const btn = document.getElementById('udm-test-btn');
-    const res = document.getElementById('udm-test-result');
+    var btn = document.getElementById('udm-test-btn');
+    var res = document.getElementById('udm-test-result');
     btn.disabled = true;
     res.className = 'test-result';
     res.style.display = 'none';
 
     try {
-      const r = await fetch('/api/udm-wan/test', { method: 'POST' });
-      const d = await r.json();
+      var r = await fetch('/api/udm-wan/test', { method: 'POST' });
+      var d = await r.json();
       if (d.ok) {
-        const fmt = w => `${w.name || w.key}: ${w.up ? '✅ UP' : '❌ DOWN'}${w.ip ? ' (' + w.ip + ')' : ''}`;
-        res.innerHTML =
-          '<i data-lucide="check-circle" style="width:16px;height:16px;flex-shrink:0;"></i>' +
-          '<span>Connected — ' + fmt({...d.wan.wan1, key:'WAN'}) +
-          ' &nbsp;|&nbsp; ' + fmt({...d.wan.wan2, key:'WAN2'}) + '</span>';
+        var w1 = d.wan1 || {};
+        var w2 = d.wan2 || {};
+        var fmt = function(label, w) { return esc(label) + ': ' + (w.up ? '✅ UP' : '❌ DOWN') + (w.ip ? ' (' + esc(w.ip) + ')' : ''); };
+        res.textContent = '';
+        var icon = document.createElement('i');
+        icon.setAttribute('data-lucide', 'check-circle');
+        icon.style.cssText = 'width:16px;height:16px;flex-shrink:0;';
+        res.appendChild(icon);
+        var span = document.createElement('span');
+        span.textContent = 'Connected';
+        res.appendChild(span);
         res.className = 'test-result test-ok';
       } else {
-        res.innerHTML =
-          '<i data-lucide="x-circle" style="width:16px;height:16px;flex-shrink:0;"></i>' +
-          '<span>' + (d.error || 'Unbekannter Fehler') + '</span>';
+        res.textContent = '';
+        var icon = document.createElement('i');
+        icon.setAttribute('data-lucide', 'x-circle');
+        icon.style.cssText = 'width:16px;height:16px;flex-shrink:0;';
+        res.appendChild(icon);
+        var span = document.createElement('span');
+        span.textContent = d.error || 'Unknown error';
+        res.appendChild(span);
         res.className = 'test-result test-fail';
       }
       res.style.display = 'flex';
       if (typeof lucide !== 'undefined') lucide.createIcons();
     } catch (e) {
-      res.innerHTML = '<i data-lucide="x-circle" style="width:16px;height:16px;"></i><span>' + e + '</span>';
+      res.textContent = '';
+      var span = document.createElement('span');
+      span.textContent = 'Request failed';
+      res.appendChild(span);
       res.className = 'test-result test-fail';
       res.style.display = 'flex';
     } finally {
