@@ -7,7 +7,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "description", "author", "repo", "version", "minAppVersion", "type"],
+        "required": ["id", "name", "description", "author", "repo", "version", "min_app_version", "type", "download_url"],
         "properties": {
           "id": {
             "type": "string",
@@ -36,7 +36,7 @@
             "pattern": "^\\d+\\.\\d+\\.\\d+$",
             "description": "Semantic version (e.g., 1.0.0)"
           },
-          "minAppVersion": {
+          "min_app_version": {
             "type": "string",
             "description": "Minimum DOCSight version required (e.g., 2026.2)"
           },
@@ -44,6 +44,11 @@
             "type": "string",
             "enum": ["driver", "integration", "analysis", "theme"],
             "description": "Module type"
+          },
+          "download_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "GitHub Contents API URL for downloading the module directory"
           },
           "verified": {
             "type": "boolean",
