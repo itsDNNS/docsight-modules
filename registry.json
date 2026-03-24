@@ -20,9 +20,10 @@
       "author": "Oggy512",
       "repo": "https://github.com/itsDNNS/docsight-modules",
       "version": "3.1.1",
-      "minAppVersion": "2026.2",
+      "min_app_version": "2026.2",
       "type": "integration",
-      "verified": true
+      "verified": true,
+      "download_url": "https://api.github.com/repos/itsDNNS/docsight-modules/contents/udm-wan-monitor"
     }
   ]
 }
