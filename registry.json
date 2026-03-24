@@ -12,6 +12,17 @@
       "type": "driver",
       "verified": true,
       "download_url": "https://api.github.com/repos/itsDNNS/docsight-modules/contents/thresholds-vfkd-community"
+    },
+    {
+      "id": "community.udm_wan_monitor",
+      "name": "UDM WAN Monitor",
+      "description": "Monitor WAN1 and WAN2 on Ubiquiti UDM Pro/SE devices. Tracks link state, alive status, and failover events in the global DOCSight event log.",
+      "author": "Oggy512",
+      "repo": "https://github.com/itsDNNS/docsight-modules",
+      "version": "3.1.1",
+      "minAppVersion": "2026.2",
+      "type": "integration",
+      "verified": true
     }
   ]
 }
