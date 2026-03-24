@@ -534,6 +534,20 @@ DOCSight never crashes due to a broken module:
 
 Modules reviewed and tested by the DOCSight team receive `"verified": true`. Unverified modules are functional but marked accordingly in the catalog.
 
+### Pre-Submission Checklist
+
+Before opening your PR, verify:
+
+- [ ] **Auth on all routes** — every `@bp.route` must have `@require_auth` (import from `app.web`)
+- [ ] **No credentials in HTML** — password/token fields must use `value=""` with a `(saved)` placeholder, never `value="{{ config.password }}"`
+- [ ] **Escape dynamic content** — any value from API responses inserted via `innerHTML` must be HTML-escaped; use `textContent` where possible
+- [ ] **English API errors** — error messages returned by API endpoints must be English (UI translations go in i18n files)
+- [ ] **No exception details in responses** — use generic error messages ("Connection failed"), log details server-side with `logger.exception()`
+- [ ] **i18n parity** — all language files (EN, DE, FR, ES) must have identical keys; include a `template.json` with empty values
+- [ ] **Validate user input** — config values used in URLs or paths must be sanitized (e.g. site names: alphanumeric only)
+- [ ] **Trailing newlines** — all JSON files must end with a newline
+- [ ] **Version consistency** — version string in `manifest.json` must match any version shown in docstrings or templates
+
 ### Guidelines
 
 - **One module per repository** — keep it focused
