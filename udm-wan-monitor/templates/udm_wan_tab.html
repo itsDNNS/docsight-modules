@@ -369,7 +369,7 @@ const fUp  = s => {
   const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
   return [d&&d+'d',h&&h+'h',m+'min'].filter(Boolean).join(' ');
 };
-const fSpd  = v => v==null?'—':v>=1000?(v/1000)+' Gbit/s':v+' Mbit/s';
+const fSpd  = v => { if(v==null) return '—'; const n=+v; if(isNaN(n)) return '—'; return n>=1000?(n/1000)+' Gbit/s':n+' Mbit/s'; };
 const fPct  = v => v==null?'—':parseFloat(v).toFixed(1)+' %';
 const fTmp  = v => v==null?'—':parseFloat(v).toFixed(1)+' °C';
 

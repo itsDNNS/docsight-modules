@@ -19,6 +19,7 @@ Review fixes applied:
 """
 
 import logging
+import re
 import threading
 from urllib.parse import urlparse, urlunparse
 
@@ -60,19 +61,19 @@ class UdmWanCollector(Collector):
         try:
             session = self._get_session(cfg)
             device  = _fetch_udm_device(session, cfg)
-        except PermissionError as exc:
+        except PermissionError:
             self._invalidate_session()
-            return CollectorResult.failure(self.name, str(exc))
-        except requests.exceptions.ConnectionError as exc:
+            return CollectorResult.failure(self.name, "Authentication failed")
+        except requests.exceptions.ConnectionError:
             self._invalidate_session()
-            return CollectorResult.failure(self.name, f"Connection error: {exc}")
+            return CollectorResult.failure(self.name, "Connection error")
         except requests.exceptions.Timeout:
             self._invalidate_session()
             return CollectorResult.failure(self.name, "Timeout")
-        except Exception as exc:  # noqa: BLE001
+        except Exception:  # noqa: BLE001
             self._invalidate_session()
             logger.exception("UDM WAN collect failed")
-            return CollectorResult.failure(self.name, str(exc))
+            return CollectorResult.failure(self.name, "Internal error")
 
         parsed = parse_device(device)
         events = self._detect_changes(parsed)
@@ -230,6 +231,11 @@ class UdmWanCollector(Collector):
 
 # ── Module-level helpers (shared with routes.py) ──────────────────────────────
 
+def _safe_site(s: str) -> str:
+    """Validate site name to prevent path traversal."""
+    return s if re.fullmatch(r'[a-zA-Z0-9_-]+', s) else "default"
+
+
 def _build_cfg_from(cfg) -> dict:
     """
     Build a normalised config dict from the DOCSight config manager.
@@ -260,7 +266,7 @@ def _build_cfg_from(cfg) -> dict:
         "base":       base,
         "username":   cfg.get("udm_wan_username", ""),
         "password":   cfg.get("udm_wan_password", ""),
-        "site":       (cfg.get("udm_wan_site") or "default").strip(),
+        "site":       _safe_site((cfg.get("udm_wan_site") or "default").strip()),
         "verify_ssl": bool(cfg.get("udm_wan_verify_ssl", False)),
     }
 
