@@ -1,0 +1,286 @@
+{#
+  FRITZ!Box WAN Bandwidth — Tab Template
+  Shows the current up/down rate and a simple historical chart.
+#}
+<div class="view-content" id="fbwb-view">
+<style>
+#fbwb-view .fb-hdr  { margin-bottom:1.25rem; }
+#fbwb-view .fb-title{ font-size:1.2rem;font-weight:700;letter-spacing:-.02em;
+                      display:flex;align-items:center;gap:.5rem; }
+#fbwb-view .fb-sub  { font-size:.82rem;color:var(--text-muted);margin-top:.1rem; }
+#fbwb-view .fb-bar  { display:flex;align-items:center;justify-content:space-between;
+                      flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem; }
+#fbwb-view .fb-ts   { font-size:.77rem;color:var(--text-muted); }
+#fbwb-view .fb-grid { display:grid;gap:1rem;grid-template-columns:repeat(2,1fr); }
+@media(max-width:760px){ #fbwb-view .fb-grid{ grid-template-columns:1fr; } }
+#fbwb-view .fb-card { background:var(--glass-bg);
+                      backdrop-filter:var(--glass-blur);
+                      -webkit-backdrop-filter:var(--glass-blur);
+                      border:1px solid var(--glass-border);
+                      border-radius:var(--radius-md);
+                      padding:var(--space-lg); }
+#fbwb-view .fb-lbl  { font-size:.7rem;font-weight:700;text-transform:uppercase;
+                      letter-spacing:.08em;color:var(--text-muted); }
+#fbwb-view .fb-big  { font-size:1.6rem;font-weight:700;margin-top:.35rem;
+                      font-family:var(--font-mono,monospace);font-variant-numeric:tabular-nums; }
+#fbwb-view .fb-sml  { font-size:.78rem;color:var(--text-muted);margin-top:.2rem;
+                      font-family:var(--font-mono,monospace); }
+#fbwb-view .fb-gauge{ height:6px;border-radius:4px;background:rgba(120,130,180,.18);
+                      overflow:hidden;margin-top:.7rem; }
+#fbwb-view .fb-fill { height:100%;border-radius:4px;transition:width .5s; }
+#fbwb-view .fill-dn { background:linear-gradient(90deg,#3b82f6,#8b5cf6); }
+#fbwb-view .fill-up { background:linear-gradient(90deg,#10b981,#22d3ee); }
+#fbwb-view .fb-chart{ margin-top:1rem;background:var(--glass-bg);
+                      border:1px solid var(--glass-border);border-radius:var(--radius-md);
+                      padding:var(--space-md); }
+#fbwb-view .fb-chart-hd{display:flex;align-items:center;justify-content:space-between;
+                        margin-bottom:var(--space-sm);flex-wrap:wrap;gap:.5rem;}
+#fbwb-view .fb-legend{display:flex;gap:1rem;font-size:.75rem;color:var(--text-muted);}
+#fbwb-view .fb-legend span i{display:inline-block;width:10px;height:10px;border-radius:3px;
+                             margin-right:.35rem;vertical-align:middle;}
+#fbwb-view .fb-empty{text-align:center;color:var(--text-muted);padding:2rem;font-size:.82rem;}
+#fbwb-view .fb-err  {font-size:.77rem;color:var(--crit,#ef4444);}
+#fbwb-view select.fb-range{background:rgba(255,255,255,.04);border:1px solid var(--glass-border);
+                           color:var(--text-primary);border-radius:var(--radius-sm);
+                           padding:4px 8px;font-size:.75rem;font-family:inherit;}
+</style>
+
+{% macro T(key, fallback) %}{{ t.get('community.fritzbox_wan_bandwidth.' + key, fallback) }}{% endmacro %}
+
+<div class="fb-hdr">
+  <div class="fb-title"><i data-lucide="activity"></i> FRITZ!Box WAN Bandwidth</div>
+  <div class="fb-sub" id="fbwb-sub">{{ T('device_subtitle', 'AVM FRITZ!Box — TR-064') }}</div>
+</div>
+
+<div class="fb-bar">
+  <span class="fb-ts">{{ T('last_update', 'Last update') }}: <strong id="fbwb-ts">—</strong></span>
+  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+    <span id="fbwb-err" class="fb-err" style="display:none;"></span>
+    <label style="font-size:.75rem;color:var(--text-muted);">
+      {{ T('range', 'Range') }}
+      <select id="fbwb-range" class="fb-range" onchange="fbwbLoadHistory()">
+        <option value="1">1h</option>
+        <option value="6" selected>6h</option>
+        <option value="24">24h</option>
+      </select>
+    </label>
+    <button class="btn btn-ghost" onclick="fbwbRefresh()">
+      <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i>
+      {{ T('refresh', 'Refresh') }}
+    </button>
+  </div>
+</div>
+
+<div class="fb-grid">
+  <div class="fb-card">
+    <div class="fb-lbl">{{ T('card_down', 'Downstream (current)') }}</div>
+    <div class="fb-big" id="fbwb-rx">—</div>
+    <div class="fb-sml" id="fbwb-rx-max">{{ T('of_max', 'of max') }} —</div>
+    <div class="fb-gauge"><div class="fb-fill fill-dn" id="fbwb-rx-bar" style="width:0%"></div></div>
+  </div>
+  <div class="fb-card">
+    <div class="fb-lbl">{{ T('card_up', 'Upstream (current)') }}</div>
+    <div class="fb-big" id="fbwb-tx">—</div>
+    <div class="fb-sml" id="fbwb-tx-max">{{ T('of_max', 'of max') }} —</div>
+    <div class="fb-gauge"><div class="fb-fill fill-up" id="fbwb-tx-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div class="fb-chart">
+  <div class="fb-chart-hd">
+    <div class="fb-lbl">{{ T('chart_title', 'Bandwidth history') }}</div>
+    <div class="fb-legend">
+      <span><i style="background:#3b82f6;"></i>{{ T('legend_down', 'Down') }}</span>
+      <span><i style="background:#10b981;"></i>{{ T('legend_up', 'Up') }}</span>
+    </div>
+  </div>
+  <canvas id="fbwb-canvas" height="260" style="width:100%;max-width:100%;display:block;"></canvas>
+  <div id="fbwb-empty" class="fb-empty" style="display:none;">
+    {{ T('no_history', 'No history yet — samples appear once the collector has been running.') }}
+  </div>
+</div>
+
+</div>{# /view-content #}
+
+<script>
+(function(){
+'use strict';
+if(window._fbwbInit) return;
+window._fbwbInit = true;
+
+const REFRESH_MS = 15_000;
+let _timer = null;
+
+const L = {
+  connecting: {{ t.get('community.fritzbox_wan_bandwidth.loading', 'Loading…') | tojson }},
+  ofmax:      {{ t.get('community.fritzbox_wan_bandwidth.of_max', 'of max') | tojson }},
+  disabled:   {{ t.get('community.fritzbox_wan_bandwidth.disabled', 'Module not enabled') | tojson }},
+  no_data:    {{ t.get('community.fritzbox_wan_bandwidth.no_data', 'No data yet') | tojson }},
+};
+
+const el = id => document.getElementById(id);
+
+function fmtRate(bps){
+  if(bps==null||isNaN(bps)) return '—';
+  const bits = bps * 8;  // TR-064 reports bytes/s; show bits/s for networking convention
+  if(bits < 1_000)          return bits.toFixed(0)+' bit/s';
+  if(bits < 1_000_000)      return (bits/1_000).toFixed(1)+' kbit/s';
+  if(bits < 1_000_000_000)  return (bits/1_000_000).toFixed(2)+' Mbit/s';
+  return (bits/1_000_000_000).toFixed(2)+' Gbit/s';
+}
+function fmtBitsRaw(bits){
+  if(bits==null||isNaN(bits)) return '—';
+  if(bits < 1_000)          return bits.toFixed(0)+' bit/s';
+  if(bits < 1_000_000)      return (bits/1_000).toFixed(1)+' kbit/s';
+  if(bits < 1_000_000_000)  return (bits/1_000_000).toFixed(1)+' Mbit/s';
+  return (bits/1_000_000_000).toFixed(2)+' Gbit/s';
+}
+
+function setGauge(barId, rxBps, maxBits){
+  const bar = el(barId); if(!bar) return;
+  if(!maxBits || !rxBps || maxBits<=0){ bar.style.width='0%'; return; }
+  const pct = Math.min(100, (rxBps*8)/maxBits*100);
+  bar.style.width = pct.toFixed(1)+'%';
+}
+
+async function fbwbLoadStatus(){
+  const err = el('fbwb-err');
+  try {
+    const r = await fetch('/api/fbwb/status');
+    const d = await r.json();
+    if(err) err.style.display='none';
+    if(!d.enabled && !d.sample){
+      el('fbwb-rx').textContent = '—';
+      el('fbwb-tx').textContent = '—';
+      el('fbwb-ts').textContent = L.disabled;
+      return;
+    }
+    const s = d.sample || {};
+    const link = d.link || {};
+    el('fbwb-rx').textContent = fmtRate(s.rx_bps);
+    el('fbwb-tx').textContent = fmtRate(s.tx_bps);
+    el('fbwb-rx-max').textContent = L.ofmax + ' ' + fmtBitsRaw(link.max_down_bps || s.max_down_bps);
+    el('fbwb-tx-max').textContent = L.ofmax + ' ' + fmtBitsRaw(link.max_up_bps   || s.max_up_bps);
+    setGauge('fbwb-rx-bar', s.rx_bps, link.max_down_bps || s.max_down_bps);
+    setGauge('fbwb-tx-bar', s.tx_bps, link.max_up_bps   || s.max_up_bps);
+    if(s.timestamp){
+      try { el('fbwb-ts').textContent = new Date(s.timestamp).toLocaleTimeString(); }
+      catch(_) { el('fbwb-ts').textContent = s.timestamp; }
+    } else {
+      el('fbwb-ts').textContent = L.no_data;
+    }
+  } catch(e){
+    if(err){ err.textContent = '⚠ '+e; err.style.display=''; }
+  }
+}
+
+async function fbwbLoadHistory(){
+  const sel = el('fbwb-range');
+  const hours = sel ? (sel.value || '6') : '6';
+  const canvas = el('fbwb-canvas'), empty = el('fbwb-empty');
+  if(!canvas) return;
+  try {
+    const r = await fetch('/api/fbwb/history?hours='+encodeURIComponent(hours));
+    const d = await r.json();
+    const pts = d.samples || [];
+    if(!pts.length){
+      empty.style.display='';
+      canvas.style.display='none';
+      return;
+    }
+    empty.style.display='none';
+    canvas.style.display='';
+    drawChart(canvas, pts);
+  } catch(e){
+    console.warn('[fbwb] history error', e);
+  }
+}
+
+function drawChart(canvas, pts){
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = canvas.clientWidth || 800;
+  const cssHeight = 260;
+  canvas.width  = Math.floor(cssWidth  * dpr);
+  canvas.height = Math.floor(cssHeight * dpr);
+  canvas.style.height = cssHeight+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cssWidth,cssHeight);
+
+  const padL=50, padR=12, padT=10, padB=22;
+  const w = cssWidth - padL - padR;
+  const h = cssHeight - padT - padB;
+
+  let maxRate = 0;
+  pts.forEach(p => {
+    if(typeof p.rx_bps === 'number') maxRate = Math.max(maxRate, p.rx_bps*8);
+    if(typeof p.tx_bps === 'number') maxRate = Math.max(maxRate, p.tx_bps*8);
+  });
+  if(maxRate <= 0) maxRate = 1;
+
+  const t0 = new Date(pts[0].timestamp).getTime();
+  const t1 = new Date(pts[pts.length-1].timestamp).getTime();
+  const dt = Math.max(1, t1 - t0);
+
+  const xFor = ts => padL + (new Date(ts).getTime()-t0)/dt * w;
+  const yFor = v  => padT + h - (v/maxRate) * h;
+
+  ctx.strokeStyle = 'rgba(120,130,180,0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for(let i=0;i<=4;i++){
+    const y = padT + (h/4)*i;
+    ctx.moveTo(padL, y); ctx.lineTo(padL+w, y);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(155,163,200,0.75)';
+  ctx.font = '10px monospace';
+  for(let i=0;i<=4;i++){
+    const v = maxRate * (1 - i/4);
+    const lbl = v >= 1e9 ? (v/1e9).toFixed(1)+' Gb/s'
+              : v >= 1e6 ? (v/1e6).toFixed(1)+' Mb/s'
+              : v >= 1e3 ? (v/1e3).toFixed(0)+' kb/s'
+              : v.toFixed(0)+' b/s';
+    ctx.fillText(lbl, 4, padT + (h/4)*i + 4);
+  }
+
+  function drawSeries(getter, color, alpha){
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const v = getter(p);
+      if(v==null||isNaN(v)) return;
+      const x = xFor(p.timestamp), y = yFor(v*8);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6;
+    ctx.globalAlpha = alpha || 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  drawSeries(p => p.rx_bps, '#3b82f6');
+  drawSeries(p => p.tx_bps, '#10b981');
+
+  ctx.fillStyle = 'rgba(155,163,200,0.75)';
+  const firstLbl = new Date(pts[0].timestamp).toLocaleTimeString();
+  const lastLbl  = new Date(pts[pts.length-1].timestamp).toLocaleTimeString();
+  ctx.fillText(firstLbl, padL, cssHeight-6);
+  ctx.fillText(lastLbl,  cssWidth - padR - ctx.measureText(lastLbl).width, cssHeight-6);
+}
+
+async function fbwbRefresh(){ await Promise.all([fbwbLoadStatus(), fbwbLoadHistory()]); }
+window.fbwbRefresh = fbwbRefresh;
+window.fbwbLoadHistory = fbwbLoadHistory;
+
+function start(){
+  fbwbRefresh();
+  if(_timer) clearInterval(_timer);
+  _timer = setInterval(fbwbLoadStatus, REFRESH_MS);
+}
+
+start();
+
+if(typeof lucide !== 'undefined') lucide.createIcons();
+})();
+</script>

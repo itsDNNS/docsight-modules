@@ -1,0 +1,33 @@
+{
+  "id": "community.fritzbox_wan_bandwidth",
+  "name": "FRITZ!Box WAN Bandwidth",
+  "description": "Polls current WAN upload/download throughput from an AVM FRITZ!Box via TR-064 and keeps a local history for correlation with DOCSight signal data.",
+  "version": "0.1.0",
+  "author": "itsDNNS",
+  "minAppVersion": "2026.2",
+  "type": "integration",
+  "license": "MIT",
+  "homepage": "https://github.com/itsDNNS/docsight-modules/tree/main/fritzbox-wan-bandwidth",
+  "contributes": {
+    "routes":   "routes.py",
+    "collector": "collector.py:FritzBandwidthCollector",
+    "settings": "templates/fbwb_settings.html",
+    "i18n":     "i18n/"
+  },
+  "config_secrets": ["fbwb_password"],
+  "menu": {
+    "label_key": "community.fritzbox_wan_bandwidth.nav_title",
+    "icon":      "activity",
+    "order":     46
+  },
+  "config": {
+    "fbwb_enabled":       false,
+    "fbwb_host":          "fritz.box",
+    "fbwb_port":          49000,
+    "fbwb_use_tls":       false,
+    "fbwb_username":      "",
+    "fbwb_password":      "",
+    "fbwb_interval":      30,
+    "fbwb_history_days":  7
+  }
+}

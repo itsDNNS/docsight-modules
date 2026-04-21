@@ -1,0 +1,192 @@
+{#
+  FRITZ!Box WAN Bandwidth — Settings Panel
+  Uses the standard DOCSight settings UI classes.
+#}
+<div class="settings-panel" id="panel-mod-community_fritzbox_wan_bandwidth">
+  <div class="settings-card glass">
+
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-icon blue">
+          <i data-lucide="activity"></i>
+        </div>
+        <div>
+          <div class="card-title">
+            {{ t.get('community.fritzbox_wan_bandwidth.settings_title', 'FRITZ!Box WAN Bandwidth') }}
+          </div>
+          <div class="card-subtitle">
+            {{ t.get('community.fritzbox_wan_bandwidth.settings_subtitle', 'Poll current WAN down/upload via TR-064 and keep a local history.') }}
+          </div>
+        </div>
+      </div>
+      <a href="/fbwb" class="btn btn-ghost btn-sm" style="text-decoration:none; gap:6px;">
+        <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i>
+        {{ t.get('community.fritzbox_wan_bandwidth.open_dashboard', 'Dashboard') }}
+      </a>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <span class="toggle-title">
+          {{ t.get('community.fritzbox_wan_bandwidth.enabled', 'Enable WAN bandwidth polling') }}
+        </span>
+        <span class="toggle-desc">
+          {{ t.get('community.fritzbox_wan_bandwidth.enabled_hint', 'Requires TR-064 (“Access for Applications”) to be enabled on the FRITZ!Box.') }}
+        </span>
+      </div>
+      <input type="hidden" name="fbwb_enabled" value="false">
+      <label class="toggle">
+        <input type="checkbox" id="fbwb_enabled" name="fbwb_enabled"
+               value="true" {% if config.fbwb_enabled %}checked{% endif %}>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="form-grid cols-2" style="margin-top: var(--space-md);">
+
+      <div class="form-field" style="grid-column: 1 / -1;">
+        <label class="form-label" for="fbwb_host">
+          {{ t.get('community.fritzbox_wan_bandwidth.host', 'FRITZ!Box host / IP address') }}
+        </label>
+        <input class="form-input" type="text" id="fbwb_host" name="fbwb_host"
+               value="{{ config.fbwb_host or 'fritz.box' }}"
+               placeholder="fritz.box" autocomplete="off">
+        <span class="form-hint">
+          {{ t.get('community.fritzbox_wan_bandwidth.host_hint', 'Hostname or IP of the FRITZ!Box, e.g. fritz.box or 192.168.178.1.') }}
+        </span>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="fbwb_port">
+          {{ t.get('community.fritzbox_wan_bandwidth.port', 'TR-064 port') }}
+        </label>
+        <input class="form-input" type="number" id="fbwb_port" name="fbwb_port"
+               value="{{ config.fbwb_port or 49000 }}" min="1" max="65535" placeholder="49000">
+        <span class="form-hint">
+          {{ t.get('community.fritzbox_wan_bandwidth.port_hint', 'AVM default: 49000 (HTTP) or 49443 (HTTPS).') }}
+        </span>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">
+          {{ t.get('community.fritzbox_wan_bandwidth.use_tls', 'Use HTTPS') }}
+        </label>
+        <div class="toggle-row" style="padding:0;border:none;">
+          <input type="hidden" name="fbwb_use_tls" value="false">
+          <label class="toggle">
+            <input type="checkbox" id="fbwb_use_tls" name="fbwb_use_tls"
+                   value="true" {% if config.fbwb_use_tls %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="form-hint" style="margin-left:10px;">
+            {{ t.get('community.fritzbox_wan_bandwidth.use_tls_hint', 'Enable if TR-064 is exposed over HTTPS (port 49443).') }}
+          </span>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="fbwb_username">
+          {{ t.get('community.fritzbox_wan_bandwidth.username', 'Username') }}
+        </label>
+        <input class="form-input" type="text" id="fbwb_username" name="fbwb_username"
+               value="{{ config.fbwb_username }}" placeholder="dslf-config"
+               autocomplete="off">
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="fbwb_password">
+          {{ t.get('community.fritzbox_wan_bandwidth.password', 'Password') }}
+        </label>
+        <input class="form-input" type="password" id="fbwb_password" name="fbwb_password"
+               value="" placeholder="{% if config.fbwb_password %}(saved){% else %}••••••••{% endif %}"
+               autocomplete="new-password">
+        <span class="form-hint">
+          {{ t.get('community.fritzbox_wan_bandwidth.password_hint', 'Stored encrypted in the DOCSight configuration.') }}
+        </span>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="fbwb_interval">
+          {{ t.get('community.fritzbox_wan_bandwidth.interval', 'Poll interval (seconds)') }}
+        </label>
+        <input class="form-input" type="number" id="fbwb_interval" name="fbwb_interval"
+               value="{{ config.fbwb_interval or 30 }}" min="10" max="3600" placeholder="30">
+        <span class="form-hint">
+          {{ t.get('community.fritzbox_wan_bandwidth.interval_hint', 'How often a bandwidth sample is taken. Minimum 10 s.') }}
+        </span>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="fbwb_history_days">
+          {{ t.get('community.fritzbox_wan_bandwidth.history_days', 'History retention (days)') }}
+        </label>
+        <input class="form-input" type="number" id="fbwb_history_days" name="fbwb_history_days"
+               value="{{ config.fbwb_history_days or 7 }}" min="1" max="90" placeholder="7">
+        <span class="form-hint">
+          {{ t.get('community.fritzbox_wan_bandwidth.history_days_hint', 'Samples older than this are removed automatically.') }}
+        </span>
+      </div>
+
+    </div>
+
+    <div class="btn-row" style="margin-top: var(--space-lg);">
+      <button type="button" class="btn btn-ghost btn-sm" id="fbwb-test-btn"
+              onclick="fbwbTest()">
+        <i data-lucide="plug-zap" style="width:14px;height:14px;"></i>
+        {{ t.get('community.fritzbox_wan_bandwidth.test_connection', 'Test connection') }}
+      </button>
+    </div>
+    <div class="test-result" id="fbwb-test-result"></div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  async function fbwbTest() {
+    var btn = document.getElementById('fbwb-test-btn');
+    var res = document.getElementById('fbwb-test-result');
+    btn.disabled = true;
+    res.className = 'test-result';
+    res.style.display = 'none';
+    try {      var data = {
+        fbwb_host: document.getElementById('fbwb_host')?.value || '',
+        fbwb_port: document.getElementById('fbwb_port')?.value || '',
+        fbwb_use_tls: document.getElementById('fbwb_use_tls')?.checked || false,
+        fbwb_username: document.getElementById('fbwb_username')?.value || ''
+      };
+      var rawPassword = document.getElementById('fbwb_password')?.value || '';
+      if (rawPassword) data.fbwb_password = rawPassword;
+      var r = await fetch('/api/fbwb/test', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+      var d = await r.json();
+      var icon = document.createElement('i');
+      var span = document.createElement('span');
+      if (d.ok) {
+        icon.setAttribute('data-lucide', 'check-circle');
+        span.textContent = {{ t.get('community.fritzbox_wan_bandwidth.test_connected', 'Connected') | tojson }};
+        res.className = 'test-result test-ok';
+      } else {
+        icon.setAttribute('data-lucide', 'x-circle');
+        span.textContent = d.error || {{ t.get('community.fritzbox_wan_bandwidth.test_unknown_error', 'Unknown error') | tojson }};
+        res.className = 'test-result test-fail';
+      }
+      icon.style.cssText = 'width:16px;height:16px;flex-shrink:0;';
+      res.textContent = '';
+      res.appendChild(icon);
+      res.appendChild(span);
+      res.style.display = 'flex';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch (e) {
+      res.textContent = '';
+      var span2 = document.createElement('span');
+      span2.textContent = {{ t.get('community.fritzbox_wan_bandwidth.test_request_failed', 'Request failed') | tojson }};
+      res.appendChild(span2);
+      res.className = 'test-result test-fail';
+      res.style.display = 'flex';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  window.fbwbTest = fbwbTest;
+})();
+</script>

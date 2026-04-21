@@ -24,6 +24,18 @@
       "type": "integration",
       "verified": true,
       "download_url": "https://api.github.com/repos/itsDNNS/docsight-modules/contents/udm-wan-monitor"
+    },
+    {
+      "id": "community.fritzbox_wan_bandwidth",
+      "name": "FRITZ!Box WAN Bandwidth",
+      "description": "Poll current WAN upload/download throughput from an AVM FRITZ!Box via TR-064 and keep a local history for correlating own traffic with DOCSight signal data.",
+      "author": "itsDNNS",
+      "repo": "https://github.com/itsDNNS/docsight-modules",
+      "version": "0.1.0",
+      "min_app_version": "2026.2",
+      "type": "integration",
+      "verified": false,
+      "download_url": "https://api.github.com/repos/itsDNNS/docsight-modules/contents/fritzbox-wan-bandwidth"
     }
   ]
 }

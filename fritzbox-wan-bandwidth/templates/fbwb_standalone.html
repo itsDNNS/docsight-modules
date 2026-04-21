@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="{{ (t.get('_meta.language_code', 'en') if t else 'en') }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FRITZ!Box WAN Bandwidth — DOCSight</title>
+  <link rel="stylesheet" href="/static/css/fonts.css"      onerror="this.remove()">
+  <link rel="stylesheet" href="/static/css/tokens.css"     onerror="this.remove()">
+  <link rel="stylesheet" href="/static/css/components.css" onerror="this.remove()">
+  <link rel="stylesheet" href="/static/css/main.css"       onerror="this.remove()">
+  <style>
+    :root {
+      --void:#06080f;--surface:#111628;--elevated:#181e35;
+      --amethyst:#7c3aed;--sapphire:#3b82f6;
+      --good:#10b981;--warn:#f59e0b;--crit:#ef4444;
+      --text-primary:#e8edff;--text-secondary:#9ba3c8;--text-muted:#7880a6;
+      --glass-bg:rgba(17,22,40,0.65);--glass-border:rgba(120,130,180,0.12);
+      --glass-blur:blur(24px) saturate(1.2);
+      --space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;
+      --radius-sm:10px;--radius-md:14px;--radius-lg:20px;
+      --font-sans:'Outfit',system-ui,-apple-system,sans-serif;
+      --font-mono:'JetBrains Mono','Fira Code',monospace;
+    }
+    [data-theme="light"] {
+      --void:#f8f6f3;--surface:#fff;--elevated:#f0edf5;
+      --text-primary:#1a1520;--text-secondary:#5e5673;--text-muted:#8a82a0;
+      --glass-bg:rgba(255,255,255,0.7);--glass-border:rgba(120,100,160,0.15);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{font-family:var(--font-sans);background:var(--void);
+              color:var(--text-primary);-webkit-font-smoothing:antialiased;min-height:100%;}
+    .standalone-page{max-width:1200px;margin:0 auto;padding:1.5rem 1.25rem 3rem;}
+    .btn{display:inline-flex;align-items:center;gap:6px;border:none;
+         border-radius:var(--radius-sm);font-family:inherit;font-weight:600;
+         cursor:pointer;transition:all .25s;min-height:32px;
+         padding:6px 12px;font-size:.75rem;}
+    .btn-ghost{background:rgba(255,255,255,.04);border:1px solid var(--glass-border);
+               color:var(--text-primary);}
+    .btn-ghost:hover{background:rgba(255,255,255,.08);}
+  </style>
+</head>
+<body>
+<div class="standalone-page">
+  {% include "fbwb_tab.html" %}
+</div>
+<script src="/static/vendor/lucide.min.js"></script>
+<script>
+  try {
+    const stored = localStorage.getItem('docsis-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', stored);
+  } catch(_) {}
+</script>
+<script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
+</body>
+</html>
