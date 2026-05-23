@@ -13,7 +13,10 @@ docker restart docsight
 
 ## Configuration
 
-List any configuration keys here.
+List any configuration keys here. If the module stores passwords or API tokens,
+declare those keys in `config_secrets` in `manifest.json` and render the field as
+an empty password/token input in Settings. Saved secret values must not be written
+back into HTML `value` attributes.
 
 ## API Endpoints
 
