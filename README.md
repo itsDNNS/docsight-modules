@@ -12,9 +12,14 @@
 
 ## Available Modules
 
-See [`registry.json`](registry.json) for the full catalog.
+DOCSight can install catalog modules from **Settings > Extensions > Community Modules**. The catalog is defined in [`registry.json`](registry.json).
 
-> No community modules yet — yours could be the first! See below for how to build one.
+| Module | Type | What it adds | Requirements |
+|--------|------|--------------|--------------|
+| [VF Kabel Deutschland Community Thresholds](thresholds-vfkd-community/) | `analysis` | Regional signal thresholds based on community recommendations for Vodafone/Kabel Deutschland cable connections | DOCSight 2026.2+ |
+| [UDM WAN-Monitor](udm-wan-monitor/) | `integration` | WAN1/WAN2 status collection for Ubiquiti UDM Pro/SE setups, with DOCSight events and dashboard surfaces | DOCSight 2026.2+, UDM access on the local network |
+
+The catalog is curated, but modules can be maintained either in this repository or in an external contributor repository. See [Submitting a Module](#submitting-a-module) for the registry format and review checklist.
 
 ---
 
@@ -195,7 +200,7 @@ class MyCollector(Collector):
 
 DOCSight passes `config_mgr`, `storage`, and `web` to every module collector. The base class provides exponential backoff on repeated failures (30s to 3600s max, auto-reset after 24h idle).
 
-> **Note:** Community modules receive a `_ModuleConfigProxy` instead of the raw `ConfigManager`. This proxy hides secret keys (modem password, API tokens) that are not declared in your module's `config` defaults.
+> **Note:** Community modules receive a `_ModuleConfigProxy` instead of the raw `ConfigManager`. This proxy hides DOCSight core secret keys such as modem passwords and API tokens. Module-owned sensitive settings should be kept out of rendered HTML values and handled through dedicated password/token fields.
 
 ### `publisher` — Data Export (e.g., MQTT)
 
@@ -501,16 +506,27 @@ DOCSight never crashes due to a broken module:
 
 ## Submitting a Module
 
+### Repository Model
+
+The catalog supports two contribution styles:
+
+- **Curated in-repo modules:** Small, reviewed modules can live directly in this repository under their own directory.
+- **External modules:** Larger modules can stay in a contributor-owned GitHub repository and be referenced from `registry.json`.
+
+In both cases, the registry entry must point to an installable module directory through `download_url`.
+
 ### Prerequisites
 
-- Your module works locally (tested with DOCSight)
-- Your module has its own GitHub repository
-- Your module has a README with installation instructions
+- Your module works locally with DOCSight
+- Your module has a README with setup, requirements, and support notes
+- Your `manifest.json` uses a unique ID that does not conflict with built-in DOCSight modules
+- Routes, collectors, settings forms, and stored configuration follow the safety checklist below
 
 ### Steps
 
 1. Fork this repository
-2. Add your module to `registry.json`:
+2. Add or update your module files if the module lives in this catalog repository
+3. Add your module to `registry.json`:
 
    ```json
    {
@@ -520,15 +536,16 @@ DOCSight never crashes due to a broken module:
      "author": "your-github-username",
      "repo": "https://github.com/your-username/docsight-mymodule",
      "version": "1.0.0",
-     "minAppVersion": "2026.2",
+     "min_app_version": "2026.2",
      "type": "integration",
+     "download_url": "https://api.github.com/repos/your-username/docsight-mymodule/contents/my-module?ref=main",
      "verified": false
    }
    ```
 
-3. Open a Pull Request
-4. We review: valid manifest, basic functionality, no malicious code
-5. After merge, your module appears in the catalog
+4. Open a Pull Request
+5. We review: valid manifest, basic functionality, clear setup docs, and no malicious or unsafe behavior
+6. After merge, your module appears in the catalog
 
 ### Verified Badge
 
