@@ -2,7 +2,7 @@
   "id": "community.udm_wan_monitor",
   "name": "UDM WAN-Monitor",
   "description": "Überwacht WAN1 und WAN2 einer Ubiquiti UDM Pro und erzeugt Events im globalen DOCSight-Log.",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "author": "Oggy512",
   "minAppVersion": "2026.2",
   "type": "integration",
@@ -32,5 +32,8 @@
     "udm_wan_extra_port1_alias":   "",
     "udm_wan_extra_port2_ifname":  "",
     "udm_wan_extra_port2_alias":   ""
-  }
+  },
+  "config_secrets": [
+    "udm_wan_password"
+  ]
 }
