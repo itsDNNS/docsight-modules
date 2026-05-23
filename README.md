@@ -97,6 +97,7 @@ Every module needs a `manifest.json`:
 | `homepage` | string | URL to module documentation or repo |
 | `license` | string | SPDX license identifier (e.g., `MIT`) |
 | `config` | object | Default configuration values ([details](#config-defaults)) |
+| `config_secrets` | array | Module-owned sensitive config keys ([details](#module-owned-secrets)) |
 | `menu` | object | Sidebar navigation entry ([details](#menu-entry)) |
 
 #### Menu Entry
@@ -120,10 +121,16 @@ Add a sidebar link for your module:
 Declare default values and they are automatically registered in DOCSight's config system:
 
 ```json
-"config": {
-  "mymodule_enabled": false,
-  "mymodule_api_url": "",
-  "mymodule_interval": 300
+{
+  "config": {
+    "mymodule_enabled": false,
+    "mymodule_api_url": "",
+    "mymodule_api_token": "",
+    "mymodule_interval": 300
+  },
+  "config_secrets": [
+    "mymodule_api_token"
+  ]
 }
 ```
 
@@ -131,6 +138,15 @@ Declare default values and they are automatically registered in DOCSight's confi
 - Integer values are auto-added to `INT_KEYS` (parsed from text inputs)
 - String values are stored as-is
 - Keys must not conflict with existing core config keys
+
+#### Module-Owned Secrets
+
+Use `config_secrets` for module passwords, API tokens, and other sensitive settings:
+
+- Every key in `config_secrets` must also exist in the same manifest's `config` object.
+- Secret keys are encrypted at rest and masked in Settings after they are saved.
+- Community collectors can read only their own declared secret keys; they still cannot read DOCSight core secrets such as modem passwords or global API tokens.
+- Settings templates should render secret fields as empty password/token inputs. Do not write saved secret values back into HTML `value` attributes.
 
 ---
 
@@ -200,7 +216,7 @@ class MyCollector(Collector):
 
 DOCSight passes `config_mgr`, `storage`, and `web` to every module collector. The base class provides exponential backoff on repeated failures (30s to 3600s max, auto-reset after 24h idle).
 
-> **Note:** Community modules receive a `_ModuleConfigProxy` instead of the raw `ConfigManager`. This proxy hides DOCSight core secret keys such as modem passwords and API tokens. Module-owned sensitive settings should be kept out of rendered HTML values and handled through dedicated password/token fields.
+> **Note:** Community modules receive a `_ModuleConfigProxy` instead of the raw `ConfigManager`. This proxy hides DOCSight core secret keys such as modem passwords and API tokens. Declare module-owned passwords or tokens in `config_secrets`; only those declared keys are readable by that module's collector. Keep saved secret values out of rendered HTML and handle them through dedicated password/token fields.
 
 ### `publisher` — Data Export (e.g., MQTT)
 

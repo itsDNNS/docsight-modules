@@ -10,6 +10,13 @@
     "routes": "routes.py",
     "i18n": "i18n/"
   },
+  "config": {
+    "example_api_url": "",
+    "example_api_token": ""
+  },
+  "config_secrets": [
+    "example_api_token"
+  ],
   "menu": {
     "label_key": "community.example.title",
     "icon": "puzzle",
