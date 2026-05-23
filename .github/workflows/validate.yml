@@ -1,0 +1,28 @@
+name: Validate module registry
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Run registry validation
+        run: python3 scripts/validate_registry.py
+
+      - name: Run validation tests
+        run: python3 -m unittest tests/test_validate_registry.py
