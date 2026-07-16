@@ -87,7 +87,7 @@ Every module needs a `manifest.json`:
 | `version` | string | Semantic version (`major.minor.patch`) |
 | `author` | string | Your GitHub username |
 | `minAppVersion` | string | Minimum DOCSight version (currently `2026.2`) |
-| `type` | string | One of: `driver`, `integration`, `analysis`, `theme` |
+| `type` | string | One of: `integration`, `analysis`, `theme` |
 | `contributes` | object | What this module provides (see [Contribution Types](#contribution-types)) |
 
 #### Optional Fields
@@ -350,44 +350,6 @@ The `thresholds.json` file must contain these three sections, each with a `_defa
 | `upstream_modulation` | QAM order thresholds (`critical_max_qam`, `warning_max_qam`) |
 | `errors` | Uncorrectable error rate (`uncorrectable_pct: { warning: %, critical: % }`) |
 
-### `driver` — Modem/Router Hardware Driver
-
-> Since DOCSight v2026-03-03
-
-```json
-"contributes": { "driver": "driver.py:MyModemDriver" }
-```
-
-Format: `filename.py:ClassName`. Your driver must extend `ModemDriver` from `app/drivers/base.py`:
-
-```python
-from app.drivers.base import ModemDriver
-
-class MyModemDriver(ModemDriver):
-    def login(self):
-        """Authenticate with the modem. Called before each poll cycle."""
-        pass
-
-    def get_docsis_data(self):
-        """Return DOCSIS channel data (see Adding-Modem-Support wiki)."""
-        return {"channelDs": {"docsis30": [], "docsis31": []},
-                "channelUs": {"docsis30": [], "docsis31": []}}
-
-    def get_device_info(self):
-        """Return device model and firmware info."""
-        return {"manufacturer": "...", "model": "...", "sw_version": "..."}
-
-    def get_connection_info(self):
-        """Return internet connection info. Empty dict if unavailable."""
-        return {}
-```
-
-The driver is registered in DOCSight's `DriverRegistry` on startup. Module drivers take priority over built-in drivers with the same key, allowing community modules to override or improve existing drivers.
-
-**Security restriction:** Driver modules **cannot** also contribute `collector` or `publisher`. This prevents a driver module from exfiltrating modem credentials to external services. If a manifest declares both, DOCSight rejects the module on startup.
-
-See the [Adding Modem Support](https://github.com/itsDNNS/docsight/wiki/Adding-Modem-Support) wiki page for the full `get_docsis_data()` return format and driver development tips.
-
 ### `theme` — Color Theme
 
 ```json
@@ -594,9 +556,8 @@ Before opening your PR, verify:
 
 | Type | Purpose | Example |
 |------|---------|---------|
-| `driver` | Hardware/modem support | Custom modem driver |
 | `integration` | External service connection | Ping test, uptime monitor, API bridge |
-| `analysis` | Data analysis/visualization | Custom charts, reports |
+| `analysis` | Data analysis/visualization | Custom charts, reports, threshold profiles |
 | `theme` | UI customization | Color schemes, layouts |
 
 ---
@@ -614,9 +575,8 @@ These built-in DOCSight modules serve as examples:
 | [Connection Monitor](https://github.com/itsDNNS/docsight/tree/main/app/modules/connection_monitor) | integration | collector, routes, settings, i18n | Full + Smart Capture |
 | [Speedtest](https://github.com/itsDNNS/docsight/tree/main/app/modules/speedtest) | integration | collector, routes, settings, i18n | Full |
 | [MQTT](https://github.com/itsDNNS/docsight/tree/main/app/modules/mqtt) | integration | publisher, settings, i18n | Publisher |
-| [VFKD Thresholds](https://github.com/itsDNNS/docsight/tree/main/app/modules/thresholds_vfkd) | driver | thresholds | Minimal |
-| [Classic Theme](https://github.com/itsDNNS/docsight/tree/main/app/modules/theme_classic) | theme | theme | Minimal |
-| [GenericDriver](https://github.com/itsDNNS/docsight/blob/main/app/drivers/generic.py) | driver | driver | Minimal |
+| [VFKD Thresholds](https://github.com/itsDNNS/docsight/blob/main/app/threshold_profiles.py) | analysis | thresholds | Minimal |
+| [Classic Theme](https://github.com/itsDNNS/docsight/blob/main/app/theme_registry.py) | theme | theme | Minimal |
 
 ---
 

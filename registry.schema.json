@@ -42,7 +42,7 @@
           },
           "type": {
             "type": "string",
-            "enum": ["driver", "integration", "analysis", "theme"],
+            "enum": ["integration", "analysis", "theme"],
             "description": "Module type"
           },
           "download_url": {

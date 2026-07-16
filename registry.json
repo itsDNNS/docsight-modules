@@ -9,7 +9,7 @@
       "repo": "https://github.com/itsDNNS/docsight-modules",
       "version": "1.0.0",
       "min_app_version": "2026.2",
-      "type": "driver",
+      "type": "analysis",
       "verified": true,
       "download_url": "https://api.github.com/repos/itsDNNS/docsight-modules/contents/thresholds-vfkd-community"
     },
