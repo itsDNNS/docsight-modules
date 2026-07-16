@@ -22,7 +22,7 @@ REGISTRY_REQUIRED_FIELDS = {
 }
 REGISTRY_OPTIONAL_FIELDS = {"verified"}
 REGISTRY_ALLOWED_FIELDS = REGISTRY_REQUIRED_FIELDS | REGISTRY_OPTIONAL_FIELDS
-ALLOWED_TYPES = {"driver", "integration", "analysis", "theme"}
+ALLOWED_TYPES = {"integration", "analysis", "theme"}
 
 
 def load_json(path: Path, errors: list[str]) -> object | None:
@@ -111,6 +111,15 @@ def validate_registry_entry(root: Path, entry: object, index: int, errors: list[
     if manifest.get("version") != entry.get("version"):
         errors.append(
             f"registry.json {module_id}: manifest version {manifest.get('version')!r} does not match registry version {entry.get('version')!r}"
+        )
+    manifest_type = manifest.get("type")
+    if manifest_type not in ALLOWED_TYPES:
+        errors.append(
+            f"registry.json {module_id}: manifest type {manifest_type!r} is not supported"
+        )
+    if manifest_type != entry.get("type"):
+        errors.append(
+            f"registry.json {module_id}: manifest type {manifest_type!r} does not match registry type {entry.get('type')!r}"
         )
 
 
