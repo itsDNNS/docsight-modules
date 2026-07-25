@@ -15,14 +15,27 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          path: catalog
+
+      - name: Check out DOCSight manifest contract
+        uses: actions/checkout@v4
+        with:
+          repository: itsDNNS/docsight
+          path: docsight-core
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
+      - name: Validate manifests against DOCSight core
+        run: python3 docsight-core/app/manifest_contract.py catalog
+
       - name: Run registry validation
+        working-directory: catalog
         run: python3 scripts/validate_registry.py
 
       - name: Run validation tests
-        run: python3 -m unittest tests/test_validate_registry.py
+        working-directory: catalog
+        run: python3 -m unittest discover -s tests -q

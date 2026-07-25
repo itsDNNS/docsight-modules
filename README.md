@@ -143,10 +143,13 @@ Declare default values and they are automatically registered in DOCSight's confi
 
 Use `config_secrets` for module passwords, API tokens, and other sensitive settings:
 
-- Every key in `config_secrets` must also exist in the same manifest's `config` object.
+- Every key in `config_secrets` must also exist in the same manifest's `config` object with a string default, normally `""`; non-string defaults are rejected so encrypted values never enter scalar coercion.
+- `config_secrets` must be a list of unique strings.
 - Secret keys are encrypted at rest and masked in Settings after they are saved.
 - Community collectors can read only their own declared secret keys; they still cannot read DOCSight core secrets such as modem passwords or global API tokens.
-- Settings templates should render secret fields as empty password/token inputs. Do not write saved secret values back into HTML `value` attributes.
+- Settings templates should render secret fields as empty password/token inputs with `data-config-secret="true"`. Add `data-saved-secret="true"` only when the masked config value indicates an existing saved secret. This explicit metadata makes an untouched field post the mask while an edited field posts the new value. Do not write saved secret values back into HTML `value` attributes.
+
+The manifest capability contract is owned by DOCSight core rather than duplicated in this catalog. With sibling checkouts, run `python3 ../docsight/app/manifest_contract.py .`; catalog CI performs the same check against current core before running the registry-specific validator.
 
 ---
 
@@ -534,7 +537,7 @@ Modules reviewed and tested by the DOCSight team receive `"verified": true`. Unv
 Before opening your PR, verify:
 
 - [ ] **Auth on all routes** — every `@bp.route` must have `@require_auth` (import from `app.web`)
-- [ ] **No credentials in HTML** — password/token fields must use `value=""` with a `(saved)` placeholder, never `value="{{ config.password }}"`
+- [ ] **No credentials in HTML** — password/token fields must use `value=""`, `data-config-secret="true"`, and conditional `data-saved-secret="true"` metadata, never `value="{{ config.password }}"`
 - [ ] **Escape dynamic content** — any value from API responses inserted via `innerHTML` must be HTML-escaped; use `textContent` where possible
 - [ ] **English API errors** — error messages returned by API endpoints must be English (UI translations go in i18n files)
 - [ ] **No exception details in responses** — use generic error messages ("Connection failed"), log details server-side with `logger.exception()`

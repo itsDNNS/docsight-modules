@@ -52,6 +52,18 @@ def make_valid_fixture(
 
 
 class ValidateRegistryTests(unittest.TestCase):
+    def test_udm_password_field_uses_explicit_saved_secret_metadata(self):
+        root = Path(__file__).resolve().parents[1]
+        template = (
+            root / "udm-wan-monitor" / "templates" / "udm_wan_settings.html"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('name="udm_wan_password"', template)
+        self.assertIn('value=""', template)
+        self.assertIn('data-config-secret="true"', template)
+        self.assertIn('data-saved-secret="true"', template)
+        self.assertNotIn('value="{{ config.udm_wan_password', template)
+
     def test_valid_registry_accepts_installable_module_directory(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
