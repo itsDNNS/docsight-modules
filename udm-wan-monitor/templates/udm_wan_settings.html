@@ -77,7 +77,8 @@
           {{ t.get('community.udm_wan_monitor.password', 'Passwort') }}
         </label>
         <input class="form-input" type="password" id="udm_wan_password" name="udm_wan_password"
-               value="" placeholder="{% if config.udm_wan_password %}(saved){% else %}••••••••{% endif %}"
+               value="" placeholder="{% if config.udm_wan_password %}{{ t.get('saved_ph', 'Saved') }}{% else %}••••••••{% endif %}"
+               data-config-secret="true"{% if config.udm_wan_password %} data-saved-secret="true"{% endif %}
                autocomplete="new-password">
         <span class="form-hint">
           {{ t.get('community.udm_wan_monitor.password_hint', 'Wird verschlüsselt in der DOCSight-Konfiguration gespeichert.') }}
