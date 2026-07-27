@@ -1,5 +1,5 @@
 """
-UDM WAN Monitor — Flask Routes  v3.1.1
+UDM WAN Monitor — Flask Routes  v3.1.4
 
   GET  /udm-wan                 → Standalone dashboard page
   GET  /api/udm-wan/status      → Latest cached data (JSON)
@@ -53,14 +53,22 @@ def _collector_mod():
     import os  # noqa: PLC0415
     import sys  # noqa: PLC0415
 
-    name = "app.modules.community.udm_wan_monitor.collector"
+    directory = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+    name = f"app.modules.{directory}.collector"
     mod = sys.modules.get(name)
     if mod is None:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "collector.py")
         spec = importlib.util.spec_from_file_location(name, path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load collector module from {path}")
         mod = importlib.util.module_from_spec(spec)
         sys.modules[name] = mod
-        spec.loader.exec_module(mod)
+        try:
+            spec.loader.exec_module(mod)
+        except Exception:
+            if sys.modules.get(name) is mod:
+                del sys.modules[name]
+            raise
     return mod
 
 
