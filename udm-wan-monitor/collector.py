@@ -1,5 +1,5 @@
 """
-UDM WAN Monitor — Collector  v3.1.1
+UDM WAN Monitor — Collector  v3.1.4
 
 Polls /proxy/network/api/s/{site}/stat/device and extracts WAN status
 from the UDM device entry.

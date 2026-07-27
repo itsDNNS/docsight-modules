@@ -1,5 +1,5 @@
 """
-UDM WAN Monitor — Flask Routes  v3.1.1
+UDM WAN Monitor — Flask Routes  v3.1.4
 
   GET  /udm-wan                 → Standalone dashboard page
   GET  /api/udm-wan/status      → Latest cached data (JSON)
@@ -39,15 +39,50 @@ def _collector():
         pass
     return None
 
+def _collector_mod():
+    """Return the sibling collector module.
+
+    DOCSight loads a community module's routes.py as a synthetic top-level
+    module (``community_modules.<dir>.routes``) without registering parent
+    packages, so relative imports like ``from .collector import ...`` raise
+    ModuleNotFoundError at request time. Reuse the collector module the app
+    has already imported (``app.modules.<dir>.collector``), falling back to
+    loading the file directly.
+    """
+    import importlib.util  # noqa: PLC0415
+    import os  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    directory = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+    name = f"app.modules.{directory}.collector"
+    mod = sys.modules.get(name)
+    if mod is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "collector.py")
+        spec = importlib.util.spec_from_file_location(name, path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load collector module from {path}")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        try:
+            spec.loader.exec_module(mod)
+        except Exception:
+            if sys.modules.get(name) is mod:
+                del sys.modules[name]
+            raise
+    return mod
+
+
 def _build_cfg():
     c = _cfg()
-    from .collector import _build_cfg_from  # noqa: PLC0415
+    _collector = _collector_mod()
+    _build_cfg_from = _collector._build_cfg_from
     d = _build_cfg_from(c)
     d["enabled"] = bool(c.get("udm_wan_enabled", False))
     return d
 
 def _open_session(cfg):
-    from .collector import _login  # noqa: PLC0415
+    _collector = _collector_mod()
+    _login = _collector._login
     return _login(cfg)
 
 # ── Pages ──────────────────────────────────────────────────────────────────────
@@ -87,7 +122,9 @@ def api_detail():
 
     try:
         session  = _open_session(cfg)
-        from .collector import _fetch_udm_device, parse_device  # noqa: PLC0415
+        _collector = _collector_mod()
+        _fetch_udm_device = _collector._fetch_udm_device
+        parse_device = _collector.parse_device
         device   = _fetch_udm_device(session, cfg)
         parsed   = parse_device(device)
     except req.exceptions.ConnectionError:
@@ -153,7 +190,9 @@ def api_test():
         return jsonify({"ok": False, "error": "Host not configured"}), 400
     try:
         session = _open_session(cfg)
-        from .collector import _fetch_udm_device, parse_device  # noqa: PLC0415
+        _collector = _collector_mod()
+        _fetch_udm_device = _collector._fetch_udm_device
+        parse_device = _collector.parse_device
         device  = _fetch_udm_device(session, cfg)
         parsed  = parse_device(device)
         return jsonify({
