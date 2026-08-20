@@ -1,0 +1,30 @@
+{# ═══ Module Card: FRITZ!Box DNS-over-TLS Guard ═══ #}
+<div class="metrics-grid">
+    <div class="metric-card glass" id="fritzdotguard-card" role="button" tabindex="0"
+         style="cursor:pointer;"
+         onclick="switchView('mod-kletternaut-fritzdotguard')"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchView('mod-kletternaut-fritzdotguard')}">
+        <div class="metric-header">
+            <span class="metric-label">{{ t.get('kletternaut.fritzdotguard.title', 'FRITZ!Box DoT Guard') }}</span>
+            <div class="metric-icon" id="fdg-card-icon"><i data-lucide="shield-check"></i></div>
+        </div>
+        <div class="metric-value-row">
+            <div class="metric-value" id="fdg-card-status">&ndash;</div>
+        </div>
+        <div class="metric-sub metric-status-row">
+            <span class="metric-context">
+                <span class="metric-sub-label">{{ t.get('metric_status_label', 'Status') }}</span>
+                <span class="badge" id="fdg-card-badge">&ndash;</span>
+            </span>
+        </div>
+        <div class="metric-sub" id="fdg-card-details" style="font-size:0.8rem;color:var(--muted);margin-top:0.25rem;">
+            &ndash;
+        </div>
+        <div class="metric-sub" id="fdg-card-reconnects" style="font-size:0.75rem;color:var(--muted);margin-top:0.25rem;">
+        </div>
+        <div id="fdg-card-sparkline" style="width:100%;height:40px;margin-top:0.35rem;overflow:hidden;"></div>
+    </div>
+</div>
+
+<script src="{{ module_static_url('kletternaut.fritzdotguard', 'js/fritzdotguard-card.js', v=version) }}"></script>
+

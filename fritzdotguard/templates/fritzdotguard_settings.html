@@ -1,0 +1,100 @@
+<div class="settings-panel" id="panel-mod-kletternaut_fritzdotguard">
+    <div class="settings-card glass">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-icon red"><i data-lucide="shield-check"></i></div>
+                <div><div class="card-title">FritzBox DoT Guard</div><div class="card-subtitle">Detects DNS-over-TLS outages and auto-heals via WAN reconnect.</div></div>
+            </div>
+        </div>
+        <div class="toggle-row">
+            <div class="toggle-info"><span class="toggle-title">Enable Module</span></div>
+            <input type="hidden" name="fritzdotguard_enabled" value="false">
+            <label class="toggle"><input type="checkbox" id="fritzdotguard_enabled" name="fritzdotguard_enabled" value="true" {% if config.fritzdotguard_enabled %}checked{% endif %}><span class="toggle-slider"></span></label>
+        </div>
+        <div class="form-grid cols-2" style="margin-top:var(--space-md)">
+            <div class="form-field"><label class="form-label" for="fritzdotguard_poll_interval_seconds">Check interval (seconds)</label><input class="form-input" type="number" id="fritzdotguard_poll_interval_seconds" name="fritzdotguard_poll_interval_seconds" value="{{ config.fritzdotguard_poll_interval_seconds or 10 }}" min="5" max="3600"></div>
+            <div class="form-field"><label class="form-label" for="fritzdotguard_cooldown_seconds">Cooldown (seconds)</label><input class="form-input" type="number" id="fritzdotguard_cooldown_seconds" name="fritzdotguard_cooldown_seconds" value="{{ config.fritzdotguard_cooldown_seconds or 20 }}" min="10" max="600"></div>
+            <div class="form-field"><label class="form-label" for="fritzdotguard_telegram_bot_token">Telegram Bot Token</label><input class="form-input" type="password" id="fritzdotguard_telegram_bot_token" name="fritzdotguard_telegram_bot_token" value="" data-config-secret="true"{% if config.fritzdotguard_telegram_bot_token %} data-saved-secret="true"{% endif %}></div>
+            <div class="form-field"><label class="form-label" for="fritzdotguard_telegram_chat_id">Telegram Chat ID</label><input class="form-input" type="text" id="fritzdotguard_telegram_chat_id" name="fritzdotguard_telegram_chat_id" value="{{ config.fritzdotguard_telegram_chat_id or '' }}"></div>
+        </div>
+        <div style="margin-top:var(--space-md);display:flex;align-items:center;gap:var(--space-sm);">
+            <button type="button" id="fdg-telegram-test-btn" class="btn btn-outline" onclick="fdgTestTelegram()" style="font-size:0.85rem;">
+                <i data-lucide="send"></i> Test Message senden
+            </button>
+            <span id="fdg-telegram-test-result" style="font-size:0.85rem;"></span>
+        </div>
+        <hr style="margin:var(--space-md) 0">
+        <div class="section-header" style="margin-bottom:var(--space-sm)">Email Notification</div>
+        <div class="toggle-row" style="margin-bottom:var(--space-sm)">
+            <div class="toggle-info"><span class="toggle-title">Enable email alerts</span></div>
+            <input type="hidden" name="fritzdotguard_email_enabled" value="false">
+            <label class="toggle"><input type="checkbox" id="fritzdotguard_email_enabled" name="fritzdotguard_email_enabled" value="true" {% if config.fritzdotguard_email_enabled %}checked{% endif %}><span class="toggle-slider"></span></label>
+        </div>
+        <div class="form-field" style="margin-bottom:var(--space-sm)"><label class="form-label" for="fritzdotguard_email_addresses">Email address(es)</label><input class="form-input" type="text" id="fritzdotguard_email_addresses" name="fritzdotguard_email_addresses" value="{{ config.fritzdotguard_email_addresses or '' }}" placeholder="user@example.com+admin@example.com"><span class="form-help">Mehrere Adressen mit + trennen</span></div>
+        <div class="form-grid cols-2" style="margin-top:var(--space-sm)">
+            <div class="form-field"><label class="form-label" for="fritzdotguard_smtp_host">SMTP Host</label><input class="form-input" type="text" id="fritzdotguard_smtp_host" name="fritzdotguard_smtp_host" value="{{ config.fritzdotguard_smtp_host or 'smtp.gmail.com' }}" placeholder="smtp.gmail.com"></div>
+            <div class="form-field"><label class="form-label" for="fritzdotguard_smtp_port">SMTP Port</label><input class="form-input" type="number" id="fritzdotguard_smtp_port" name="fritzdotguard_smtp_port" value="{{ config.fritzdotguard_smtp_port or 587 }}" min="1" max="65535"></div>
+            <div class="form-field"><label class="form-label" for="fritzdotguard_smtp_user">SMTP Username</label><input class="form-input" type="text" id="fritzdotguard_smtp_user" name="fritzdotguard_smtp_user" value="{{ config.fritzdotguard_smtp_user or '' }}"></div>
+            <div class="form-field"><label class="form-label" for="fritzdotguard_smtp_password">SMTP Password / App Password</label><input class="form-input" type="password" id="fritzdotguard_smtp_password" name="fritzdotguard_smtp_password" value="" data-config-secret="true"{% if config.fritzdotguard_smtp_password %} data-saved-secret="true"{% endif %}></div>
+        </div>
+        <div class="form-field"><label class="form-label" for="fritzdotguard_smtp_from">From Address</label><input class="form-input" type="text" id="fritzdotguard_smtp_from" name="fritzdotguard_smtp_from" value="{{ config.fritzdotguard_smtp_from or '' }}" placeholder="docsight@gmail.com"></div>
+        <div style="margin-top:var(--space-sm);display:flex;align-items:center;gap:var(--space-sm);">
+            <button type="button" id="fdg-email-test-btn" class="btn btn-outline" onclick="fdgTestEmail()" style="font-size:0.85rem;">
+                <i data-lucide="mail"></i> Test email senden
+            </button>
+            <span id="fdg-email-test-result" style="font-size:0.85rem;"></span>
+        </div>
+<script>
+async function fdgTestEmail() {
+    const btn = document.getElementById('fdg-email-test-btn');
+    const result = document.getElementById('fdg-email-test-result');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    result.textContent = '';
+    try {
+        const resp = await fetch('/api/fritzdotguard/test-email', { method: 'POST' });
+        const data = await resp.json();
+        if (data.success) {
+            result.style.color = 'var(--good)';
+            result.textContent = '\u2705 ' + data.message;
+        } else {
+            result.style.color = 'var(--crit)';
+            result.textContent = '\u274c ' + (data.error || 'Unknown error');
+        }
+    } catch(e) {
+        result.style.color = 'var(--crit)';
+        result.textContent = '\u274c Network error';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="mail"></i> Test email senden';
+    lucide.createIcons();
+}
+</script>
+<script>
+async function fdgTestTelegram() {
+    const btn = document.getElementById('fdg-telegram-test-btn');
+    const result = document.getElementById('fdg-telegram-test-result');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    result.textContent = '';
+    try {
+        const resp = await fetch('/api/fritzdotguard/test-telegram', { method: 'POST' });
+        const data = await resp.json();
+        if (data.success) {
+            result.style.color = 'var(--good)';
+            result.textContent = '\u2705 ' + data.message;
+        } else {
+            result.style.color = 'var(--crit)';
+            result.textContent = '\u274c ' + (data.error || 'Unknown error');
+        }
+    } catch(e) {
+        result.style.color = 'var(--crit)';
+        result.textContent = '\u274c Network error';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="send"></i> Test Message senden';
+    lucide.createIcons();
+}
+</script>
+    </div>
+</div>

@@ -18,6 +18,7 @@ DOCSight can install catalog modules from **Settings > Extensions > Community Mo
 |--------|------|--------------|--------------|
 | [VF Kabel Deutschland Community Thresholds](thresholds-vfkd-community/) | `analysis` | Regional signal thresholds based on community recommendations for Vodafone/Kabel Deutschland cable connections | DOCSight 2026.2+ |
 | [UDM WAN-Monitor](udm-wan-monitor/) | `integration` | WAN1/WAN2 status collection for Ubiquiti UDM Pro/SE setups, with DOCSight events and dashboard surfaces | DOCSight 2026.2+, UDM access on the local network |
+| [FritzBox DoT Guard](fritzdotguard/) | `integration` | Detects DNS-over-TLS outages on a FRITZ!Box and auto-heals via a TR-064 WAN reconnect, with Telegram/email alerts and DOCSight events | DOCSight 2026.8+, FRITZ!Box with TR-064 |
 
 The catalog is curated, but modules can be maintained either in this repository or in an external contributor repository. See [Submitting a Module](#submitting-a-module) for the registry format and review checklist.
 

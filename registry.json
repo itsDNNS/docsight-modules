@@ -24,6 +24,18 @@
       "type": "integration",
       "verified": true,
       "download_url": "https://api.github.com/repos/itsDNNS/docsight-modules/contents/udm-wan-monitor"
+    },
+    {
+      "id": "kletternaut.fritzdotguard",
+      "name": "FritzBox DoT Guard",
+      "description": "Detects DNS-over-TLS outages on a FRITZ!Box and auto-heals via a TR-064 WAN reconnect, with Telegram/email alerts and DOCSight event-log integration.",
+      "author": "Kletternaut",
+      "repo": "https://github.com/itsDNNS/docsight-modules",
+      "version": "0.2.0",
+      "min_app_version": "2026.8",
+      "type": "integration",
+      "verified": false,
+      "download_url": "https://api.github.com/repos/itsDNNS/docsight-modules/contents/fritzdotguard"
     }
   ]
 }

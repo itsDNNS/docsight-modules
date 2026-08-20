@@ -1,0 +1,43 @@
+{
+  "id": "kletternaut.fritzdotguard",
+  "name": "FritzBox DoT Guard",
+  "description": "DOCSight community module: detects DNS-over-TLS outages and auto-heals via WAN reconnect.",
+  "version": "0.2.0",
+  "author": "Kletternaut",
+  "minAppVersion": "2026.8",
+  "type": "integration",
+  "contributes": {
+    "collector": "collector.py:FritzDoTGuardCollector",
+    "routes": "routes.py",
+    "settings": "templates/fritzdotguard_settings.html",
+    "card": "templates/fritzdotguard_card.html",
+    "tab": "templates/fritzdotguard_detail.html",
+    "static": "static/",
+    "i18n": "i18n/"
+  },
+  "config": {
+    "fritzdotguard_enabled": false,
+    "fritzdotguard_poll_interval_seconds": 10,
+    "fritzdotguard_cooldown_seconds": 20,
+    "fritzdotguard_watchdog_multiplier": 3,
+    "fritzdotguard_telegram_bot_token": "",
+    "fritzdotguard_telegram_chat_id": "",
+    "fritzdotguard_email_enabled": false,
+    "fritzdotguard_email_addresses": "",
+    "fritzdotguard_smtp_host": "smtp.gmail.com",
+    "fritzdotguard_smtp_port": 587,
+    "fritzdotguard_smtp_user": "",
+    "fritzdotguard_smtp_password": "",
+    "fritzdotguard_smtp_from": "",
+    "fritzdotguard_smtp_use_tls": true
+  },
+  "config_secrets": [
+    "fritzdotguard_smtp_password",
+    "fritzdotguard_telegram_bot_token"
+  ],
+  "menu": {
+    "label_key": "kletternaut.fritzdotguard.title",
+    "icon": "shield-check",
+    "order": 30
+  }
+}

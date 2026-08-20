@@ -1,0 +1,130 @@
+{# ═══ Tab: FRITZ!Box DNS-over-TLS Guard Detail ═══ #}
+<div class="view-content" id="fdg-detail-view">
+    <div class="view-page-header">
+        <div class="view-page-header-left">
+            <h2 class="view-page-title" tabindex="-1">{{ t.get('kletternaut.fritzdotguard.title', 'FRITZ!Box DNS-over-TLS Guard') }}</h2>
+            <span class="view-page-subtitle">{{ t.get('kletternaut.fritzdotguard.desc', 'Erkennt AVM DoT-Ausfälle und heilt automatisch per WAN-Reconnect.') }}</span>
+        </div>
+    </div>
+
+    <div class="metrics-grid" style="margin-top:1rem;">
+        <!-- Status Card -->
+        <div class="metric-card glass" id="fdg-tab-status">
+            <div class="metric-header">
+                <span class="metric-label">{{ t.get('kletternaut.fritzdotguard.current_status', 'Aktueller Status') }}</span>
+                <div class="metric-icon blue" id="fdg-tab-status-icon"><i data-lucide="shield-check"></i></div>
+            </div>
+            <div class="metric-value-row">
+                <div class="metric-value" id="fdg-tab-status-text">&ndash;</div>
+            </div>
+            <div class="metric-sub metric-status-row">
+                <span class="badge" id="fdg-tab-badge">&ndash;</span>
+            </div>
+            <div class="metric-sub" id="fdg-tab-details" style="font-size:0.85rem;color:var(--muted);margin-top:0.5rem;"></div>
+        </div>
+
+        <!-- DoT Servers Card -->
+        <div class="metric-card glass" id="fdg-tab-servers">
+            <div class="metric-header">
+                <span class="metric-label">{{ t.get('kletternaut.fritzdotguard.dot_servers', 'DNS-over-TLS Server') }}</span>
+                <div class="metric-icon blue"><i data-lucide="server"></i></div>
+            </div>
+            <div class="metric-value-row">
+                <div class="metric-value" id="fdg-tab-ips" style="font-size:1.1rem;">&ndash;</div>
+            </div>
+            <div class="metric-sub" style="font-size:0.8rem;color:var(--muted);">
+                {{ t.get('kletternaut.fritzdotguard.dot_info', 'Nur DoT (Port 853) – kein unverschlüsselter DNS-Fallback') }}
+            </div>
+        </div>
+
+        <!-- Reconnect Stats Card -->
+        <div class="metric-card glass" id="fdg-tab-reconnects">
+            <div class="metric-header">
+                <span class="metric-label">{{ t.get('kletternaut.fritzdotguard.reconnect_stats', 'WAN-Reconnects') }}</span>
+                <div class="metric-icon blue"><i data-lucide="refresh-cw"></i></div>
+            </div>
+            <div class="metric-value-row">
+                <div class="metric-value" id="fdg-tab-reconnect-count">0</div>
+            </div>
+            <div class="metric-sub" id="fdg-tab-last-reconnect" style="font-size:0.8rem;color:var(--muted);">&ndash;</div>
+        </div>
+
+        <!-- Recovery Stats Card -->
+        <div class="metric-card glass" id="fdg-tab-recoveries">
+            <div class="metric-header">
+                <span class="metric-label">{{ t.get('kletternaut.fritzdotguard.recovery_stats', 'Wiederherstellungen') }}</span>
+                <div class="metric-icon green"><i data-lucide="shield-check"></i></div>
+            </div>
+            <div class="metric-value-row">
+                <div class="metric-value" id="fdg-tab-recovery-count">0</div>
+            </div>
+            <div class="metric-sub" id="fdg-tab-last-recovery" style="font-size:0.8rem;color:var(--muted);">&ndash;</div>
+        </div>
+
+        <!-- Last Check Card -->
+        <div class="metric-card glass" id="fdg-tab-lastcheck">
+            <div class="metric-header">
+                <span class="metric-label">{{ t.get('kletternaut.fritzdotguard.last_check', 'Letzte Prüfung') }}</span>
+                <div class="metric-icon blue"><i data-lucide="clock"></i></div>
+            </div>
+            <div class="metric-value-row">
+                <div class="metric-value" id="fdg-tab-check-time" style="font-size:1rem;">&ndash;</div>
+            </div>
+            <div class="metric-sub" style="font-size:0.8rem;color:var(--muted);">
+                {{ t.get('kletternaut.fritzdotguard.poll_interval_label', 'Prüfintervall') }}: <span id="fdg-tab-interval">10s</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DoT Status History Chart -->
+    <div class="glass" style="margin-top:1.5rem;padding:1.25rem;border-radius:var(--radius-lg);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <i data-lucide="activity" style="width:1.1rem;height:1.1rem;opacity:0.7;"></i>
+                <h3 style="margin:0;font-size:1rem;">{{ t.get('kletternaut.fritzdotguard.history', 'DoT Status Verlauf') }}</h3>
+            </div>
+            <div class="trend-tabs" id="fdg-range-tabs" style="display:flex;gap:0.25rem;flex-wrap:wrap;">
+                <button class="trend-tab" data-range="1h" onclick="fdgLoadChart('1h', this)">1h</button>
+                <button class="trend-tab" data-range="6h" onclick="fdgLoadChart('6h', this)">6h</button>
+                <button class="trend-tab active" data-range="1d" onclick="fdgLoadChart('1d', this)">1d</button>
+                <button class="trend-tab" data-range="2d" onclick="fdgLoadChart('2d', this)">2d</button>
+                <button class="trend-tab" data-range="3d" onclick="fdgLoadChart('3d', this)">3d</button>
+                <button class="trend-tab" data-range="7d" onclick="fdgLoadChart('7d', this)">7d</button>
+                <button class="trend-tab" data-range="30d" onclick="fdgLoadChart('30d', this)">30d</button>
+                <button class="trend-tab" data-range="90d" onclick="fdgLoadChart('90d', this)">90d</button>
+            </div>
+        </div>
+        <div id="fdg-chart-container" style="width:100%;height:280px;position:relative;">
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--muted);font-size:0.9rem;" id="fdg-chart-empty">Keine Verlaufsdaten – Daten werden gesammelt...</div>
+        </div>
+    </div>
+
+    <!-- Configuration Summary -->
+    <div class="glass" style="margin-top:1.5rem;padding:1.25rem;border-radius:var(--radius-lg);">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+            <i data-lucide="settings" style="width:1.1rem;height:1.1rem;opacity:0.7;"></i>
+            <h3 style="margin:0;font-size:1rem;">{{ t.get('kletternaut.fritzdotguard.config_summary', 'Konfiguration') }}</h3>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;font-size:0.85rem;">
+            <div>
+                <span style="color:var(--muted);">{{ t.get('kletternaut.fritzdotguard.cfg_fritzbox', 'FRITZ!Box') }}:</span>
+                <strong id="fdg-cfg-fritzbox">&ndash;</strong>
+            </div>
+            <div>
+                <span style="color:var(--muted);">{{ t.get('kletternaut.fritzdotguard.cfg_poll', 'Prüfintervall') }}:</span>
+                <strong id="fdg-cfg-poll">&ndash;</strong>
+            </div>
+            <div>
+                <span style="color:var(--muted);">{{ t.get('kletternaut.fritzdotguard.cfg_cooldown', 'Cooldown') }}:</span>
+                <strong id="fdg-cfg-cooldown">&ndash;</strong>
+            </div>
+            <div>
+                <span style="color:var(--muted);">{{ t.get('kletternaut.fritzdotguard.cfg_telegram', 'Telegram') }}:</span>
+                <strong id="fdg-cfg-telegram">&ndash;</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ module_static_url('kletternaut.fritzdotguard', 'js/fritzdotguard-detail.js', v=version) }}"></script>
+
