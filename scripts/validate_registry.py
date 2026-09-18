@@ -22,7 +22,7 @@ REGISTRY_REQUIRED_FIELDS = {
 }
 REGISTRY_OPTIONAL_FIELDS = {"verified"}
 REGISTRY_ALLOWED_FIELDS = REGISTRY_REQUIRED_FIELDS | REGISTRY_OPTIONAL_FIELDS
-ALLOWED_TYPES = {"integration", "analysis", "theme"}
+ALLOWED_TYPES = {"driver", "integration", "analysis", "theme"}
 
 
 def load_json(path: Path, errors: list[str]) -> object | None:
