@@ -87,7 +87,7 @@ Every module needs a `manifest.json`:
 | `version` | string | Semantic version (`major.minor.patch`) |
 | `author` | string | Your GitHub username |
 | `minAppVersion` | string | Minimum DOCSight version (currently `2026.2`) |
-| `type` | string | One of: `integration`, `analysis`, `theme` |
+| `type` | string | One of: `driver`, `integration`, `analysis`, `theme` |
 | `contributes` | object | What this module provides (see [Contribution Types](#contribution-types)) |
 
 #### Optional Fields
@@ -98,6 +98,7 @@ Every module needs a `manifest.json`:
 | `license` | string | SPDX license identifier (e.g., `MIT`) |
 | `config` | object | Default configuration values ([details](#config-defaults)) |
 | `config_secrets` | array | Module-owned sensitive config keys ([details](#module-owned-secrets)) |
+| `hints` | object | Driver connection form hints ([details](#driver-modem-support)) |
 | `menu` | object | Sidebar navigation entry ([details](#menu-entry)) |
 
 #### Menu Entry
@@ -146,7 +147,7 @@ Use `config_secrets` for module passwords, API tokens, and other sensitive setti
 - Every key in `config_secrets` must also exist in the same manifest's `config` object with a string default, normally `""`; non-string defaults are rejected so encrypted values never enter scalar coercion.
 - `config_secrets` must be a list of unique strings.
 - Secret keys are encrypted at rest and masked in Settings after they are saved.
-- Community collectors can read only their own declared secret keys; they still cannot read DOCSight core secrets such as modem passwords or global API tokens.
+- The collector config proxy exposes only the module's own declared secret keys and hides core secrets. This API boundary is not a Python sandbox; installed code must be trusted.
 - Settings templates should render secret fields as empty password/token inputs with `data-config-secret="true"`. Add `data-saved-secret="true"` only when the masked config value indicates an existing saved secret. This explicit metadata makes an untouched field post the mask while an edited field posts the new value. Do not write saved secret values back into HTML `value` attributes.
 
 The manifest capability contract is owned by DOCSight core rather than duplicated in this catalog. With sibling checkouts, run `python3 ../docsight/app/manifest_contract.py .`; catalog CI performs the same check against current core before running the registry-specific validator.
@@ -189,6 +190,20 @@ def api_data():
     return jsonify({...})
 ```
 
+### `driver`: Modem Support
+
+Community modem driver support is restored on main and in images built from this fix. The tagged v2026-09-16.1 release does not include this restoration.
+
+Declare `"type": "driver"` and `"contributes": {"driver": "driver.py:ExampleDriver"}`. The entry point must be a plain module-local Python filename and a concrete `ModemDriver` subclass implementing `login()`, `get_docsis_data()`, `get_device_info()`, and `get_connection_info()`. Inherit the constructor `(url, user, password)` or provide a compatible one. Relative imports such as `from .helper import parse_channels` work within the module directory.
+
+The manifest `id` is the modem selection key, for example `community.example`. IDs use lowercase letters, digits, dots and underscores, start with a letter and must fit the browser's 128-character driver-key limit. Use a unique community prefix for new modem support. To explicitly override a built-in driver, use its exact key as the module ID, for example `fritzbox`. No separate override field is needed. The enabled module supplies the implementation and displayed name for that key within its application; the global built-in catalog is unchanged. If `hints` is omitted or empty, the built-in hints are inherited. Nonempty module hints replace the complete built-in hint object rather than merging with it. Community constructors receive only `(url, user, password)`, without built-in-specific keyword arguments. Only enabled modules whose complete contribution plan validates are registered. Restart after installing, enabling or disabling a module. The driver then appears in Settings > Extensions with a Community badge and in the setup/settings modem choices. Select it and save the connection settings. If an override is disabled, removed or rejected, a newly started application uses the original built-in implementation, name and hints for that key. If an unavailable module has its own key with no built-in fallback, connection tests and polling fail safely. The saved selection is retained in both cases.
+
+Driver contributions cannot be combined with collectors or publishers, even under another module type. Themes cannot contribute drivers. These are contribution rules, not a sandbox: community modules execute trusted Python in the DOCSight process and drivers receive modem credentials. Install only code you trust; these rules do not prevent malicious code from accessing data or the network.
+
+Optional `hints` can contain boolean `needs_user`, `needs_password`, `username_required`, `credentials_required`, and string or null `default_url`, `default_user`, `url_hint`, `user_hint`, `password_hint`. A nonempty `default_url` must be an HTTP(S) URL without embedded credentials. Invalid hints reject the module before they can break setup/settings initialization.
+
+Copy [`TEMPLATE-DRIVER/`](TEMPLATE-DRIVER/) for a minimal, inert starting point. Threshold profiles, including VFKD thresholds, remain `analysis` modules.
+
 ### `collector` — Scheduled Data Collection
 
 ```json
@@ -219,7 +234,7 @@ class MyCollector(Collector):
 
 DOCSight passes `config_mgr`, `storage`, and `web` to every module collector. The base class provides exponential backoff on repeated failures (30s to 3600s max, auto-reset after 24h idle).
 
-> **Note:** Community modules receive a `_ModuleConfigProxy` instead of the raw `ConfigManager`. This proxy hides DOCSight core secret keys such as modem passwords and API tokens. Declare module-owned passwords or tokens in `config_secrets`; only those declared keys are readable by that module's collector. Keep saved secret values out of rendered HTML and handle them through dedicated password/token fields.
+> **Note:** Community modules receive a `_ModuleConfigProxy` instead of the raw `ConfigManager`. This proxy hides DOCSight core secret keys such as modem passwords and API tokens. Declare module-owned passwords or tokens in `config_secrets`; only those declared secret keys are exposed through that proxy. Keep saved secret values out of rendered HTML and handle them through dedicated password/token fields.
 
 ### `publisher` — Data Export (e.g., MQTT)
 
@@ -385,7 +400,7 @@ A theme module provides dark and light color schemes. The `theme.json` must cont
 
 Only one theme can be active at a time. Users select themes in Settings > Appearance.
 
-**Security restriction:** Theme modules cannot contribute `collector`, `routes`, or `publisher`.
+**Security restriction:** Theme modules cannot contribute `collector`, `routes`, `publisher`, or `driver`.
 
 ### `static` — CSS & JavaScript
 
@@ -447,7 +462,7 @@ The Smart Capture engine is wired to your collector in `main.py` after `discover
        image: ghcr.io/itsdnns/docsight:latest
        volumes:
          - docsight_data:/data
-         - ./modules:/modules    # <-- add this line
+         - ./modules:/data/modules
        ports:
          - "8765:8765"
    ```
@@ -466,7 +481,7 @@ The Smart Capture engine is wired to your collector in `main.py` after `discover
    docker compose restart docsight
    ```
 
-4. **Verify** in Settings > Modules — your module should appear with a "Community" badge.
+4. **Verify** in Settings > Extensions. Your module should appear with a "Community" badge.
 
 5. **Check logs** for any loading errors:
 
@@ -474,9 +489,11 @@ The Smart Capture engine is wired to your collector in `main.py` after `discover
    docker compose logs docsight | grep -i module
    ```
 
+The standard persistent module path is `/data/modules`. An existing mount at `/modules` requires `MODULES_DIR=/modules` explicitly.
+
 ### Error Handling
 
-DOCSight never crashes due to a broken module:
+Contribution resolution failures reject the complete module plan while other modules continue loading. Installed Python code remains trusted:
 
 - Invalid manifests are skipped with a warning
 - Load failures are caught per-module and stored as error state
@@ -559,6 +576,7 @@ Before opening your PR, verify:
 
 | Type | Purpose | Example |
 |------|---------|---------|
+| `driver` | Modem support | [Minimal driver template](TEMPLATE-DRIVER/), explicit same-ID built-in override |
 | `integration` | External service connection | Ping test, uptime monitor, API bridge |
 | `analysis` | Data analysis/visualization | Custom charts, reports, threshold profiles |
 | `theme` | UI customization | Color schemes, layouts |

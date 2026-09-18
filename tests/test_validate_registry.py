@@ -82,15 +82,14 @@ class ValidateRegistryTests(unittest.TestCase):
 
             self.assertTrue(any("manifest ID" in error and "community.sample" in error for error in errors))
 
-    def test_removed_driver_type_is_rejected_for_registry_and_manifest(self):
+    def test_driver_type_is_accepted_for_registry_and_manifest(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             make_valid_fixture(root, registry_type="driver", manifest_type="driver")
 
             errors = validate_repository(root)
 
-            self.assertTrue(any("invalid type 'driver'" in error for error in errors))
-            self.assertTrue(any("manifest type 'driver' is not supported" in error for error in errors))
+            self.assertEqual(errors, [])
 
     def test_registry_type_must_match_manifest_type(self):
         with tempfile.TemporaryDirectory() as tmp:

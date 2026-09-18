@@ -1,0 +1,15 @@
+{
+  "id": "community.example_driver",
+  "name": "Example Driver",
+  "description": "Minimal modem driver template",
+  "version": "1.0.0",
+  "author": "your-github-username",
+  "minAppVersion": "NEXT_RELEASE",
+  "type": "driver",
+  "contributes": {
+    "driver": "driver.py:ExampleDriver"
+  },
+  "hints": {
+    "credentials_required": false
+  }
+}
