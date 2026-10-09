@@ -1,5 +1,5 @@
 {#
-  UDM WAN Monitor — Tab Template  v3.1.1
+  UniFi WAN Monitor — Tab Template  v3.1.1
   Included via {% include %} into DOCSight's index.html.
   All user-visible strings use {{ t['community.udm_wan_monitor.key'] or 'English fallback' }}
   so they are translated via i18n/de.json, fr.json, es.json automatically.
@@ -120,9 +120,9 @@
 
 {# ── Header ────────────────────────────────────────────────────────────────── #}
 <div class="udm-hdr">
-  <div class="udm-title"><i data-lucide="router"></i> UDM WAN-Monitor</div>
+  <div class="udm-title"><i data-lucide="router"></i> UniFi WAN-Monitor</div>
   <div class="udm-ver">v3.1.1</div>
-  <div class="udm-sub" id="udm-sub">{{ T('device_subtitle', 'Ubiquiti UDM Pro') }}</div>
+  <div class="udm-sub" id="udm-sub">{{ T('device_subtitle', 'Ubiquiti Gateway') }}</div>
 </div>
 
 <div class="udm-bar">
@@ -151,7 +151,7 @@
           <div class="iw"><i data-lucide="globe"></i></div>
           <div>
             <div class="wan-name">WAN 1</div>
-            <div class="wan-ifname">eth9</div>
+            <div class="wan-ifname" id="w1-ifname">—</div>
           </div>
         </div>
         <div class="status-row">
@@ -175,6 +175,7 @@
     </div>
     <div class="metrics">
       <div class="metric"><span class="ml">{{ T('label_ip', 'IP') }}</span>           <span class="mv" id="w1-ip">—</span></div>
+      <div class="metric" id="w1-ippub-row" style="display:none;"><span class="ml">{{ T('label_ip_public', 'Public IP') }}</span> <span class="mv" id="w1-ippub">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_ipv6', 'IPv6') }}</span>        <span class="mv" id="w1-ip6">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_dns', 'DNS') }}</span>           <span class="mv" id="w1-dns">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_isp', 'ISP') }}</span>           <span class="mv" id="w1-isp">—</span></div>
@@ -197,7 +198,7 @@
           <div class="iw"><i data-lucide="globe-2"></i></div>
           <div>
             <div class="wan-name">WAN 2</div>
-            <div class="wan-ifname">eth8</div>
+            <div class="wan-ifname" id="w2-ifname">—</div>
           </div>
         </div>
         <div class="status-row">
@@ -221,6 +222,7 @@
     </div>
     <div class="metrics">
       <div class="metric"><span class="ml">{{ T('label_ip', 'IP') }}</span>           <span class="mv" id="w2-ip">—</span></div>
+      <div class="metric" id="w2-ippub-row" style="display:none;"><span class="ml">{{ T('label_ip_public', 'Public IP') }}</span> <span class="mv" id="w2-ippub">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_ipv6', 'IPv6') }}</span>        <span class="mv" id="w2-ip6">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_dns', 'DNS') }}</span>           <span class="mv" id="w2-dns">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_isp', 'ISP') }}</span>           <span class="mv" id="w2-isp">—</span></div>
@@ -412,7 +414,14 @@ function fillWan(px, w) {
   pill(px+'-online', px+'-online-txt', w&&w.online, L.online, L.offline);
   setRole(px, w);
   if(!w) return;
+  txt(px+'-ifname', w.ifname);
   txt(px+'-ip',    w.ip);
+  const pubRow=el(px+'-ippub-row');
+  if(pubRow){
+    const showPub=!!w.ip_public && w.ip_public!==w.ip;
+    pubRow.style.display=showPub?'':'none';
+    if(showPub) txt(px+'-ippub', w.ip_public);
+  }
   txt(px+'-ip6',   w.ipv6);
   txt(px+'-dns',   w.dns);
   txt(px+'-isp',   w.isp && w.city ? w.isp+' ('+w.city+')' : (w.isp||w.city||null));

@@ -1,5 +1,5 @@
 {#
-  UDM WAN Monitor — Settings Panel
+  UniFi WAN Monitor — Settings Panel
   Uses the exact DOCSight settings UI classes from settings.css:
   settings-panel, settings-card glass, card-header, card-title-group,
   card-icon, toggle-row, toggle, form-grid cols-2, form-field,
@@ -7,7 +7,7 @@
 #}
 
 <div class="settings-panel" id="panel-mod-community_udm_wan_monitor">
-  <div class="settings-card glass">
+  <div class="settings-card glass" style="padding: var(--card-padding, var(--space-lg, 1.5rem));">
 
     {# ── Card header ───────────────────────────────────────────────── #}
     <div class="card-header">
@@ -17,10 +17,10 @@
         </div>
         <div>
           <div class="card-title">
-            {{ t.get('community.udm_wan_monitor.settings_title', 'Ubiquiti UDM WAN-Monitor') }}
+            {{ t.get('community.udm_wan_monitor.settings_title', 'UniFi WAN-Monitor') }}
           </div>
           <div class="card-subtitle">
-            {{ t.get('community.udm_wan_monitor.settings_subtitle', 'WAN1 & WAN2 überwachen · Events im globalen Log · UDM Pro / UDM SE') }}
+            {{ t.get('community.udm_wan_monitor.settings_subtitle', 'WAN1 & WAN2 überwachen · Events im globalen Log · UDM / UCG') }}
           </div>
         </div>
       </div>
@@ -34,7 +34,7 @@
     <div class="toggle-row">
       <div class="toggle-info">
         <span class="toggle-title">
-          {{ t.get('community.udm_wan_monitor.enabled', 'UDM WAN-Monitor aktivieren') }}
+          {{ t.get('community.udm_wan_monitor.enabled', 'UniFi WAN-Monitor aktivieren') }}
         </span>
         <span class="toggle-desc">
           {{ t.get('community.udm_wan_monitor.enabled_hint', 'Startet die Überwachung und schreibt WAN-Events in das globale DOCSight-Ereignislog.') }}
@@ -59,7 +59,7 @@
                value="{{ config.udm_wan_host }}" placeholder="192.168.1.1"
                autocomplete="off">
         <span class="form-hint">
-          {{ t.get('community.udm_wan_monitor.host_hint', 'IP-Adresse oder Hostname der UDM Pro (HTTPS, Standard-Port 443)') }}
+          {{ t.get('community.udm_wan_monitor.host_hint', 'IP-Adresse oder Hostname des Gateways (UDM/UCG) (HTTPS, Standard-Port 443)') }}
         </span>
       </div>
 

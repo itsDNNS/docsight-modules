@@ -44,6 +44,7 @@
   "label_active": "",
   "label_standby": "",
   "label_ip": "",
+  "label_ip_public": "",
   "label_ipv6": "",
   "label_dns": "",
   "label_isp": "",
