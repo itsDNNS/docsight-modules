@@ -1,5 +1,5 @@
 {#
-  UDM WAN Monitor — Settings Panel
+  UniFi WAN Monitor — Settings Panel
   Uses the exact DOCSight settings UI classes from settings.css:
   settings-panel, settings-card glass, card-header, card-title-group,
   card-icon, toggle-row, toggle, form-grid cols-2, form-field,
@@ -7,7 +7,7 @@
 #}
 
 <div class="settings-panel" id="panel-mod-community_udm_wan_monitor">
-  <div class="settings-card glass">
+  <div class="settings-card glass" style="padding: var(--card-padding, var(--space-lg, 1.5rem));">
 
     {# ── Card header ───────────────────────────────────────────────── #}
     <div class="card-header">
@@ -17,10 +17,10 @@
         </div>
         <div>
           <div class="card-title">
-            {{ t.get('community.udm_wan_monitor.settings_title', 'Ubiquiti UDM WAN-Monitor') }}
+            {{ t.get('community.udm_wan_monitor.settings_title', 'UniFi WAN-Monitor') }}
           </div>
           <div class="card-subtitle">
-            {{ t.get('community.udm_wan_monitor.settings_subtitle', 'WAN1 & WAN2 überwachen · Events im globalen Log · UDM Pro / UDM SE') }}
+            {{ t.get('community.udm_wan_monitor.settings_subtitle', 'WAN1 & WAN2 überwachen · Events im globalen Log · UDM / UCG') }}
           </div>
         </div>
       </div>
@@ -34,7 +34,7 @@
     <div class="toggle-row">
       <div class="toggle-info">
         <span class="toggle-title">
-          {{ t.get('community.udm_wan_monitor.enabled', 'UDM WAN-Monitor aktivieren') }}
+          {{ t.get('community.udm_wan_monitor.enabled', 'UniFi WAN-Monitor aktivieren') }}
         </span>
         <span class="toggle-desc">
           {{ t.get('community.udm_wan_monitor.enabled_hint', 'Startet die Überwachung und schreibt WAN-Events in das globale DOCSight-Ereignislog.') }}
@@ -59,7 +59,7 @@
                value="{{ config.udm_wan_host }}" placeholder="192.168.1.1"
                autocomplete="off">
         <span class="form-hint">
-          {{ t.get('community.udm_wan_monitor.host_hint', 'IP-Adresse oder Hostname der UDM Pro (HTTPS, Standard-Port 443)') }}
+          {{ t.get('community.udm_wan_monitor.host_hint', 'IP-Adresse oder Hostname des Gateways (UDM/UCG) (HTTPS, Standard-Port 443)') }}
         </span>
       </div>
 
@@ -115,6 +115,20 @@
         </span>
       </div>
 
+      <div class="form-field" style="grid-column: 1 / -1;">
+        <label class="form-label" for="udm_wan_primary">
+          {{ t.get('community.udm_wan_monitor.primary_wan', 'Cable connection (relevant for DOCSight)') }}
+        </label>
+        <select class="form-input" id="udm_wan_primary" name="udm_wan_primary">
+          <option value="" {% if not config.udm_wan_primary %}selected{% endif %}>{{ t.get('community.udm_wan_monitor.primary_wan_none', 'Not set') }}</option>
+          <option value="wan1" {% if config.udm_wan_primary == 'wan1' %}selected{% endif %}>{{ t.get('community.udm_wan_monitor.primary_wan_wan1', 'WAN 1') }}</option>
+          <option value="wan2" {% if config.udm_wan_primary == 'wan2' %}selected{% endif %}>{{ t.get('community.udm_wan_monitor.primary_wan_wan2', 'WAN 2') }}</option>
+        </select>
+        <span class="form-hint">
+          {{ t.get('community.udm_wan_monitor.primary_wan_hint', 'The WAN that carries your cable/DOCSIS connection. It is highlighted in the dashboard, and outages on the other WAN are only reported as warnings instead of critical.') }}
+        </span>
+      </div>
+
     </div>
 
     {# ── SSL toggle ────────────────────────────────────────────────── #}
@@ -135,58 +149,58 @@
       </label>
     </div>
 
-    {# ── Optional extra ports ──────────────────────────────────────── #}
-    <div style="margin-top: var(--space-xl);">
+    {% set legacy_ports = [] %}
+    {% if config.udm_wan_extra_port1_ifname %}{% set _ = legacy_ports.append({'ifname': config.udm_wan_extra_port1_ifname, 'alias': config.udm_wan_extra_port1_alias or ''}) %}{% endif %}
+    {% if config.udm_wan_extra_port2_ifname %}{% set _ = legacy_ports.append({'ifname': config.udm_wan_extra_port2_ifname, 'alias': config.udm_wan_extra_port2_alias or ''}) %}{% endif %}
+    <div style="margin-top: var(--space-xl);" id="udm-ports-section"
+         data-msg-invalid="{{ t.get('community.udm_wan_monitor.port_invalid', 'Enter a valid interface name, e.g. eth7.') }}"
+         data-msg-duplicate="{{ t.get('community.udm_wan_monitor.port_duplicate', 'This interface is already in the list.') }}"
+         data-msg-max="{{ t.get('community.udm_wan_monitor.port_max', 'At most 8 ports.') }}"
+         data-msg-empty="{{ t.get('community.udm_wan_monitor.ports_empty', 'No ports defined.') }}"
+         data-msg-remove="{{ t.get('community.udm_wan_monitor.port_remove', 'Remove') }}">
       <div class="section-label">
         <i data-lucide="ethernet-port" style="width:14px;height:14px;"></i>
-        {{ t.get('community.udm_wan_monitor.extra_ports_title', 'Optionale zusätzliche Ports') }}
+        {{ t.get('community.udm_wan_monitor.extra_ports_title', 'WAN ports (manual)') }}
       </div>
       <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:var(--space-md);">
-        {{ t.get('community.udm_wan_monitor.extra_ports_hint', 'Bis zu zwei weitere Ports überwachen (z.B. ein SFP+-Port als dritter WAN-Uplink). Interface-Name wie "eth7", Alias frei wählbar. Leer lassen um zu deaktivieren.') }}
+        {{ t.get('community.udm_wan_monitor.extra_ports_hint', 'WAN 1 and WAN 2 are detected automatically. If your gateway reports no WAN, or you want to monitor another port such as an SFP+ uplink, add it here by interface name (e.g. "eth7").') }}
       </p>
 
-      <div class="form-grid cols-2">
-        <div class="form-field">
-          <label class="form-label" for="udm_wan_extra_port1_ifname">
-            {{ t.get('community.udm_wan_monitor.extra_port1_ifname', 'Zusatz-Port 1 — Interface') }}
-          </label>
-          <input class="form-input" type="text" id="udm_wan_extra_port1_ifname"
-                 name="udm_wan_extra_port1_ifname"
-                 value="{{ config.udm_wan_extra_port1_ifname }}"
-                 placeholder="eth7">
-          <span class="form-hint">{{ t.get('community.udm_wan_monitor.extra_port_ifname_hint', 'Interface-Name, z.B. eth7') }}</span>
-        </div>
-        <div class="form-field">
-          <label class="form-label" for="udm_wan_extra_port1_alias">
-            {{ t.get('community.udm_wan_monitor.extra_port1_alias', 'Zusatz-Port 1 — Alias') }}
-          </label>
-          <input class="form-input" type="text" id="udm_wan_extra_port1_alias"
-                 name="udm_wan_extra_port1_alias"
-                 value="{{ config.udm_wan_extra_port1_alias }}"
-                 placeholder="WAN 3 (Backup)">
-          <span class="form-hint">{{ t.get('community.udm_wan_monitor.extra_port_alias_hint', 'Anzeigename im Dashboard') }}</span>
-        </div>
+      <input type="hidden" id="udm_wan_extra_ports" name="udm_wan_extra_ports"
+             value="{{ config.udm_wan_extra_ports or '' }}"
+             data-legacy='{{ legacy_ports|tojson }}'>
+      <div id="udm-ports-list"></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="udm-port-add" style="margin-top:var(--space-sm);">
+        <i data-lucide="plus" style="width:14px;height:14px;"></i>
+        {{ t.get('community.udm_wan_monitor.port_add', 'Add port') }}
+      </button>
+    </div>
 
-        <div class="form-field">
-          <label class="form-label" for="udm_wan_extra_port2_ifname">
-            {{ t.get('community.udm_wan_monitor.extra_port2_ifname', 'Zusatz-Port 2 — Interface') }}
-          </label>
-          <input class="form-input" type="text" id="udm_wan_extra_port2_ifname"
-                 name="udm_wan_extra_port2_ifname"
-                 value="{{ config.udm_wan_extra_port2_ifname }}"
-                 placeholder="eth6">
+    <dialog class="modal-overlay" id="udm-port-dialog" role="dialog" aria-modal="true" aria-labelledby="udm-port-dialog-title">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="udm-port-dialog-title">{{ t.get('community.udm_wan_monitor.port_dialog_title', 'Add WAN port') }}</h2>
+          <button type="button" class="modal-close" id="udm-port-close" aria-label="{{ t.get('community.udm_wan_monitor.port_cancel', 'Cancel') }}">&times;</button>
         </div>
-        <div class="form-field">
-          <label class="form-label" for="udm_wan_extra_port2_alias">
-            {{ t.get('community.udm_wan_monitor.extra_port2_alias', 'Zusatz-Port 2 — Alias') }}
-          </label>
-          <input class="form-input" type="text" id="udm_wan_extra_port2_alias"
-                 name="udm_wan_extra_port2_alias"
-                 value="{{ config.udm_wan_extra_port2_alias }}"
-                 placeholder="WAN 4 (LTE)">
+        <div class="modal-body">
+          <div class="form-field">
+            <label class="form-label" for="udm-port-ifname">{{ t.get('community.udm_wan_monitor.port_ifname', 'Interface') }}</label>
+            <input class="form-input" type="text" id="udm-port-ifname" placeholder="eth7" autocomplete="off" maxlength="32">
+            <span class="form-hint">{{ t.get('community.udm_wan_monitor.extra_port_ifname_hint', 'Interface name, e.g. eth7') }}</span>
+          </div>
+          <div class="form-field" style="margin-top:var(--space-md);">
+            <label class="form-label" for="udm-port-alias">{{ t.get('community.udm_wan_monitor.port_alias', 'Alias') }}</label>
+            <input class="form-input" type="text" id="udm-port-alias" placeholder="WAN 3" autocomplete="off" maxlength="40">
+            <span class="form-hint">{{ t.get('community.udm_wan_monitor.extra_port_alias_hint', 'Display name in dashboard') }}</span>
+          </div>
+          <div class="test-result test-fail" id="udm-port-error" role="alert" style="display:none;margin-top:var(--space-md);"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="udm-port-cancel">{{ t.get('community.udm_wan_monitor.port_cancel', 'Cancel') }}</button>
+          <button type="button" class="btn btn-primary" id="udm-port-confirm">{{ t.get('community.udm_wan_monitor.port_confirm', 'Add') }}</button>
         </div>
       </div>
-    </div>
+    </dialog>
 
     {# ── Test connection ────────────────────────────────────────────── #}
     <div class="btn-row" style="margin-top: var(--space-lg);">
@@ -248,5 +262,103 @@
     }
   }
   window.udmWanTest = udmWanTest;
+})();
+</script>
+
+<script>
+(function () {
+  var MAX_PORTS = 8;
+  var IFNAME_RE = /^[A-Za-z0-9_.:-]{1,32}$/;
+  var section = document.getElementById('udm-ports-section');
+  var hidden = document.getElementById('udm_wan_extra_ports');
+  var list = document.getElementById('udm-ports-list');
+  var addBtn = document.getElementById('udm-port-add');
+  var dlg = document.getElementById('udm-port-dialog');
+  if (!section || !hidden || !list || !addBtn || !dlg) return;
+
+  document.body.appendChild(dlg);
+
+  var ifnameInput = dlg.querySelector('#udm-port-ifname');
+  var aliasInput = dlg.querySelector('#udm-port-alias');
+  var errBox = dlg.querySelector('#udm-port-error');
+
+  function load() {
+    var raw = (hidden.value || '').trim();
+    var src = raw || hidden.dataset.legacy || '[]';
+    try {
+      var v = JSON.parse(src);
+      return Array.isArray(v) ? v.filter(function (p) { return p && IFNAME_RE.test(String(p.ifname || '')); }) : [];
+    } catch (e) { return []; }
+  }
+  var ports = load();
+
+  function commit() {
+    hidden.value = JSON.stringify(ports);
+    hidden.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function render() {
+    list.textContent = '';
+    if (!ports.length) {
+      var empty = document.createElement('p');
+      empty.style.cssText = 'font-size:.8rem;color:var(--text-muted);margin:0;';
+      empty.textContent = section.dataset.msgEmpty;
+      list.appendChild(empty);
+    }
+    ports.forEach(function (p, i) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:var(--space-sm);padding:.35rem 0;';
+      var name = document.createElement('strong');
+      name.textContent = p.alias || p.ifname;
+      var code = document.createElement('code');
+      code.style.cssText = 'color:var(--text-muted);font-size:.78rem;';
+      code.textContent = p.ifname;
+      var rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'btn btn-ghost btn-sm';
+      rm.style.marginLeft = 'auto';
+      rm.setAttribute('aria-label', section.dataset.msgRemove + ': ' + p.ifname);
+      rm.title = section.dataset.msgRemove;
+      var icon = document.createElement('i');
+      icon.setAttribute('data-lucide', 'x');
+      icon.style.cssText = 'width:14px;height:14px;';
+      rm.appendChild(icon);
+      rm.addEventListener('click', function () { ports.splice(i, 1); commit(); render(); });
+      row.appendChild(name); row.appendChild(code); row.appendChild(rm);
+      list.appendChild(row);
+    });
+    addBtn.style.display = ports.length >= MAX_PORTS ? 'none' : '';
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [list] });
+  }
+
+  function showError(msg) { errBox.textContent = msg; errBox.style.display = 'flex'; }
+
+  function openDialog() {
+    ifnameInput.value = ''; aliasInput.value = ''; errBox.style.display = 'none';
+    dlg.showModal();
+    ifnameInput.focus();
+  }
+
+  function confirmAdd() {
+    var ifname = ifnameInput.value.trim().toLowerCase();
+    var alias = aliasInput.value.trim();
+    if (!IFNAME_RE.test(ifname)) { showError(section.dataset.msgInvalid); return; }
+    if (ports.some(function (p) { return String(p.ifname).toLowerCase() === ifname; })) {
+      showError(section.dataset.msgDuplicate); return;
+    }
+    if (ports.length >= MAX_PORTS) { showError(section.dataset.msgMax); return; }
+    ports.push({ ifname: ifname, alias: alias || ifname });
+    commit(); render(); dlg.close();
+  }
+
+  addBtn.addEventListener('click', openDialog);
+  dlg.querySelector('#udm-port-confirm').addEventListener('click', confirmAdd);
+  dlg.querySelector('#udm-port-cancel').addEventListener('click', function () { dlg.close(); });
+  dlg.querySelector('#udm-port-close').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  [ifnameInput, aliasInput].forEach(function (el) {
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); confirmAdd(); } });
+  });
+  render();
 })();
 </script>

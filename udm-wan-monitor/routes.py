@@ -1,5 +1,5 @@
 """
-UDM WAN Monitor — Flask Routes  v3.1.4
+UniFi WAN Monitor — Flask Routes  v3.3.0
 
   GET  /udm-wan                 → Standalone dashboard page
   GET  /api/udm-wan/status      → Latest cached data (JSON)
@@ -81,9 +81,15 @@ def _build_cfg():
     return d
 
 def _open_session(cfg):
-    _collector = _collector_mod()
-    _login = _collector._login
-    return _login(cfg)
+    c = _collector()
+    if c is not None and hasattr(c, "_get_session"):
+        return c._get_session(cfg)
+    return _collector_mod()._login(cfg)
+
+def _drop_session():
+    c = _collector()
+    if c is not None and hasattr(c, "_invalidate_session"):
+        c._invalidate_session()
 
 # ── Pages ──────────────────────────────────────────────────────────────────────
 
@@ -125,54 +131,28 @@ def api_detail():
         _collector = _collector_mod()
         _fetch_udm_device = _collector._fetch_udm_device
         parse_device = _collector.parse_device
-        device   = _fetch_udm_device(session, cfg)
+        device   = _fetch_udm_device(
+            session, cfg, allow_no_wan=bool(_collector.parse_extra_ports(_cfg()))
+        )
         parsed   = parse_device(device)
     except req.exceptions.ConnectionError:
         return jsonify({"ok": False, "error": "Connection failed"}), 502
     except req.exceptions.Timeout:
         return jsonify({"ok": False, "error": "Timeout"}), 504
+    except LookupError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 404
+    except PermissionError:
+        _drop_session()
+        return jsonify({"ok": False, "error": "Session expired, retry"}), 401
     except Exception:  # noqa: BLE001
         logger.exception("UDM detail fetch failed")
         return jsonify({"ok": False, "error": "Internal error"}), 500
 
-    # ── Optional extra ports from config ────────────────────────────────────────
-    c = _cfg()
-    extra_ports_cfg = []
-    for i in (1, 2):
-        ifname = (c.get(f"udm_wan_extra_port{i}_ifname") or "").strip()
-        alias  = (c.get(f"udm_wan_extra_port{i}_alias")  or "").strip()
-        if ifname:
-            extra_ports_cfg.append({"ifname": ifname.lower(), "alias": alias or ifname})
+    extra_ports_cfg = _collector.parse_extra_ports(_cfg())
 
-    fixed  = {"eth9": "WAN 1", "eth8": "WAN 2"}
-    extra  = {ep["ifname"]: ep["alias"] for ep in extra_ports_cfg}
-    wanted = {**fixed, **extra}
-    order  = {"eth9": 0, "eth8": 1}
-
-    wan_ports = []
-    for p in device.get("port_table", []):
-        ifname_raw = (p.get("ifname") or "")
-        ifname_lc  = ifname_raw.lower()
-        if ifname_lc not in wanted:
-            continue
-        wan_ports.append({
-            "label":       wanted[ifname_lc],
-            "name":        p.get("name"),
-            "ifname":      ifname_raw,
-            "up":          p.get("up"),
-            "speed":       p.get("speed"),
-            "full_duplex": p.get("full_duplex"),
-            "rx_bytes":    p.get("rx_bytes"),
-            "tx_bytes":    p.get("tx_bytes"),
-            "rx_bytes_r":  p.get("rx_bytes-r"),
-            "tx_bytes_r":  p.get("tx_bytes-r"),
-            "rx_errors":   p.get("rx_errors"),
-            "tx_errors":   p.get("tx_errors"),
-            "rx_dropped":  p.get("rx_dropped"),
-            "tx_dropped":  p.get("tx_dropped"),
-        })
-    wan_ports.sort(key=lambda p: order.get((p["ifname"] or "").lower(), 99))
+    wan_ports = _collector.build_wan_ports(device, parsed, extra_ports_cfg)
     parsed["wan_ports"] = wan_ports
+    parsed["primary_wan"] = _collector.primary_wan(_cfg())
 
     return jsonify({
         "ok":        True,
@@ -189,11 +169,13 @@ def api_test():
     if not cfg["host"]:
         return jsonify({"ok": False, "error": "Host not configured"}), 400
     try:
-        session = _open_session(cfg)
         _collector = _collector_mod()
+        session = _collector._login(cfg)
         _fetch_udm_device = _collector._fetch_udm_device
         parse_device = _collector.parse_device
-        device  = _fetch_udm_device(session, cfg)
+        device  = _fetch_udm_device(
+            session, cfg, allow_no_wan=bool(_collector.parse_extra_ports(_cfg()))
+        )
         parsed  = parse_device(device)
         return jsonify({
             "ok":        True,
@@ -204,6 +186,8 @@ def api_test():
         return jsonify({"ok": False, "error": "Connection failed"}), 502
     except req.exceptions.Timeout:
         return jsonify({"ok": False, "error": "Timeout"}), 504
+    except LookupError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 404
     except Exception:  # noqa: BLE001
         logger.exception("UDM WAN test failed")
         return jsonify({"ok": False, "error": "Internal error"}), 500
