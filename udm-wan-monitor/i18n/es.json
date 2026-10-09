@@ -44,6 +44,7 @@
   "label_active": "ACTIVO",
   "label_standby": "ESPERA",
   "label_ip": "IP",
+  "label_ip_public": "IP pública",
   "label_ipv6": "IPv6",
   "label_dns": "DNS",
   "label_isp": "ISP",
