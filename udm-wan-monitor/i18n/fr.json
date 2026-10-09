@@ -44,6 +44,7 @@
   "label_active": "ACTIF",
   "label_standby": "VEILLE",
   "label_ip": "IP",
+  "label_ip_public": "IP publique",
   "label_ipv6": "IPv6",
   "label_dns": "DNS",
   "label_isp": "FAI",
