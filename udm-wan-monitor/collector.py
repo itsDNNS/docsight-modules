@@ -1,8 +1,8 @@
 """
-UDM WAN Monitor — Collector  v3.1.4
+UniFi WAN Monitor — Collector  v3.2.0
 
 Polls /proxy/network/api/s/{site}/stat/device and extracts WAN status
-from the UDM device entry.
+from the UDM/UCG gateway device entry.
 
 State tracked per interface:
   - up        (link state from wan1/wan2.up)
@@ -38,6 +38,18 @@ _state = {
 }
 
 
+def _result_ok(source: str, data) -> CollectorResult:
+    if hasattr(CollectorResult, "ok"):
+        return CollectorResult.ok(source, data)
+    return CollectorResult(source=source, data=data, success=True)
+
+
+def _result_failure(source: str, error: str) -> CollectorResult:
+    if hasattr(CollectorResult, "failure"):
+        return CollectorResult.failure(source, error)
+    return CollectorResult(source=source, success=False, error=error)
+
+
 class UdmWanCollector(Collector):
     name = "udm_wan_monitor"
 
@@ -57,23 +69,25 @@ class UdmWanCollector(Collector):
     def collect(self) -> CollectorResult:
         cfg = _build_cfg_from(self._cfg)
         if not cfg["host"]:
-            return CollectorResult.failure(self.name, "UDM host not configured")
+            return _result_failure(self.name, "UDM host not configured")
         try:
             session = self._get_session(cfg)
             device  = _fetch_udm_device(session, cfg)
         except PermissionError:
             self._invalidate_session()
-            return CollectorResult.failure(self.name, "Authentication failed")
+            return _result_failure(self.name, "Authentication failed")
+        except LookupError as exc:
+            return _result_failure(self.name, str(exc))
         except requests.exceptions.ConnectionError:
             self._invalidate_session()
-            return CollectorResult.failure(self.name, "Connection error")
+            return _result_failure(self.name, "Connection error")
         except requests.exceptions.Timeout:
             self._invalidate_session()
-            return CollectorResult.failure(self.name, "Timeout")
+            return _result_failure(self.name, "Timeout")
         except Exception:  # noqa: BLE001
             self._invalidate_session()
             logger.exception("UDM WAN collect failed")
-            return CollectorResult.failure(self.name, "Internal error")
+            return _result_failure(self.name, "Internal error")
 
         parsed = parse_device(device)
         events = self._detect_changes(parsed)
@@ -82,7 +96,7 @@ class UdmWanCollector(Collector):
 
         ts = utc_now()
         self._last_result = {"parsed": parsed, "timestamp": ts}
-        return CollectorResult.ok(self.name, {"parsed": parsed, "events": events, "timestamp": ts})
+        return _result_ok(self.name, {"parsed": parsed, "events": events, "timestamp": ts})
 
     # ── Session management ────────────────────────────────────────────────────
 
@@ -281,7 +295,7 @@ def _login(cfg: dict) -> requests.Session:
     r = session.post(
         f"{cfg['base']}/api/auth/login", json=payload, headers=headers, timeout=15
     )
-    if r.status_code != 200:
+    if r.status_code in (404, 405):
         r = session.post(
             f"{cfg['base']}/api/login", json=payload, headers=headers, timeout=15
         )
@@ -294,6 +308,26 @@ def _login(cfg: dict) -> requests.Session:
     return session
 
 
+GATEWAY_TYPES = ("udm", "ugw", "usg", "ucg")
+
+
+def select_gateway(devices: list[dict]) -> dict | None:
+    for d in devices:
+        if d.get("type") in GATEWAY_TYPES and "wan1" in d:
+            return d
+    for d in devices:
+        if "wan1" in d:
+            return d
+    return next((d for d in devices if d.get("type") in GATEWAY_TYPES), None)
+
+
+def has_wan(device: dict) -> bool:
+    return any(
+        (device.get(k) or {}).get("ifname") or (device.get(k) or {}).get("name")
+        for k in ("wan1", "wan2")
+    )
+
+
 def _fetch_udm_device(session: requests.Session, cfg: dict) -> dict:
     """Fetch /stat/device and return the UDM/gateway device entry."""
     url = f"{cfg['base']}/proxy/network/api/s/{cfg['site']}/stat/device"
@@ -301,11 +335,47 @@ def _fetch_udm_device(session: requests.Session, cfg: dict) -> dict:
     if r.status_code == 401:
         raise PermissionError("Session expired (401)")
     r.raise_for_status()
-    devices = r.json().get("data", [])
-    return next(
-        (d for d in devices if d.get("type") in ("udm", "ugw", "usg")),
-        devices[0] if devices else {},
-    )
+    gateway = select_gateway(r.json().get("data", []))
+    if gateway is None:
+        raise LookupError("No gateway device found")
+    if not has_wan(gateway):
+        raise LookupError("No WAN interface (wan1/wan2) found on gateway")
+    return gateway
+
+
+def build_wan_ports(device: dict, parsed: dict, extra_ports: list[dict]) -> list[dict]:
+    wanted = {ep["ifname"]: ep["alias"] for ep in extra_ports}
+    order = {}
+    for idx, key in enumerate(("wan1", "wan2")):
+        ifname = (parsed.get(key, {}).get("ifname") or "").lower()
+        if ifname:
+            wanted[ifname] = f"WAN {idx + 1}"
+            order[ifname] = idx
+
+    rows = []
+    for p in device.get("port_table", []):
+        ifname_raw = p.get("ifname") or ""
+        label = wanted.get(ifname_raw.lower())
+        if label is None:
+            continue
+        rows.append({
+            "label":       label,
+            "name":        p.get("name"),
+            "ifname":      ifname_raw,
+            "up":          p.get("up"),
+            "speed":       p.get("speed"),
+            "full_duplex": p.get("full_duplex"),
+            "rx_bytes":    p.get("rx_bytes"),
+            "tx_bytes":    p.get("tx_bytes"),
+            "rx_bytes_r":  p.get("rx_bytes-r"),
+            "tx_bytes_r":  p.get("tx_bytes-r"),
+            "rx_errors":   p.get("rx_errors"),
+            "tx_errors":   p.get("tx_errors"),
+            "rx_dropped":  p.get("rx_dropped"),
+            "tx_dropped":  p.get("tx_dropped"),
+        })
+    rows.sort(key=lambda r: order.get(r["ifname"].lower(), 99))
+    return rows
 
 
 def parse_device(d: dict) -> dict:
