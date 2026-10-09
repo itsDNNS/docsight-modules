@@ -1,5 +1,5 @@
 """
-UniFi WAN Monitor — Collector  v3.2.1
+UniFi WAN Monitor — Collector  v3.3.0
 
 Polls /proxy/network/api/s/{site}/stat/device and extracts WAN status
 from the UDM/UCG gateway device entry.
@@ -18,6 +18,7 @@ Review fixes applied:
   - Blueprint static_url_path removed (no static/ dir exists)
 """
 
+import json
 import logging
 import re
 import threading
@@ -72,7 +73,9 @@ class UdmWanCollector(Collector):
             return _result_failure(self.name, "UDM host not configured")
         try:
             session = self._get_session(cfg)
-            device  = _fetch_udm_device(session, cfg)
+            device  = _fetch_udm_device(
+                session, cfg, allow_no_wan=bool(parse_extra_ports(self._cfg))
+            )
         except PermissionError:
             self._invalidate_session()
             return _result_failure(self.name, "Authentication failed")
@@ -115,6 +118,12 @@ class UdmWanCollector(Collector):
     def _detect_changes(self, parsed: dict) -> list[dict]:
         events: list[dict] = []
         now = utc_now()
+        primary = primary_wan(self._cfg)
+
+        def sev(severity: str, key: str) -> str:
+            if primary and key != primary and severity == "critical":
+                return "warning"
+            return severity
 
         with _state_lock:
             # Failover: active uplink interface changed
@@ -169,7 +178,7 @@ class UdmWanCollector(Collector):
 
                         if both_down:
                             msg = f"{label} ({ip or '?'}): down — alive=false, offline"
-                            self._append_event(events, now, "critical", msg, label, "down", ip)
+                            self._append_event(events, now, sev("critical", key), msg, label, "down", ip)
                         elif both_up:
                             msg = f"{label} ({ip or '?'}): restored — alive=true, online"
                             self._append_event(events, now, "info", msg, label, "up", ip)
@@ -179,7 +188,7 @@ class UdmWanCollector(Collector):
                                 msg = _event_msg(label, "alive", cur_alive, ip)
                                 self._append_event(
                                     events, now,
-                                    "critical" if degraded else "info",
+                                    sev("critical", key) if degraded else "info",
                                     msg, label,
                                     "alive_down" if degraded else "alive_up", ip,
                                 )
@@ -188,7 +197,7 @@ class UdmWanCollector(Collector):
                                 msg = _event_msg(label, "online", cur_online, ip)
                                 self._append_event(
                                     events, now,
-                                    "critical" if degraded else "info",
+                                    sev("critical", key) if degraded else "info",
                                     msg, label,
                                     "offline" if degraded else "online", ip,
                                 )
@@ -202,7 +211,7 @@ class UdmWanCollector(Collector):
                     msg = _event_msg(label, "up", cur_up, ip)
                     self._append_event(
                         events, now,
-                        "critical" if degraded else "info",
+                        sev("critical", key) if degraded else "info",
                         msg, label,
                         "link_down" if degraded else "link_up", ip,
                     )
@@ -321,6 +330,46 @@ def select_gateway(devices: list[dict]) -> dict | None:
     return next((d for d in devices if d.get("type") in GATEWAY_TYPES), None)
 
 
+def primary_wan(cfg) -> str | None:
+    value = str(cfg.get("udm_wan_primary") or "").strip().lower()
+    return value if value in ("wan1", "wan2") else None
+
+
+MAX_EXTRA_PORTS = 8
+_IFNAME_RE = re.compile(r"[A-Za-z0-9_.:-]{1,32}")
+
+
+def parse_extra_ports(cfg) -> list[dict]:
+    raw = cfg.get("udm_wan_extra_ports")
+    entries = []
+    if isinstance(raw, str) and raw.strip():
+        try:
+            parsed = json.loads(raw)
+            entries = parsed if isinstance(parsed, list) else []
+        except ValueError:
+            entries = []
+    elif not raw:
+        for i in (1, 2):
+            entries.append({
+                "ifname": cfg.get(f"udm_wan_extra_port{i}_ifname"),
+                "alias": cfg.get(f"udm_wan_extra_port{i}_alias"),
+            })
+
+    ports, seen = [], set()
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        ifname = str(e.get("ifname") or "").strip().lower()
+        if not _IFNAME_RE.fullmatch(ifname) or ifname in seen:
+            continue
+        seen.add(ifname)
+        alias = str(e.get("alias") or "").strip()[:40] or ifname
+        ports.append({"ifname": ifname, "alias": alias})
+        if len(ports) >= MAX_EXTRA_PORTS:
+            break
+    return ports
+
+
 def has_wan(device: dict) -> bool:
     return any(
         (device.get(k) or {}).get("ifname") or (device.get(k) or {}).get("name")
@@ -328,7 +377,7 @@ def has_wan(device: dict) -> bool:
     )
 
 
-def _fetch_udm_device(session: requests.Session, cfg: dict) -> dict:
+def _fetch_udm_device(session: requests.Session, cfg: dict, allow_no_wan: bool = False) -> dict:
     """Fetch /stat/device and return the UDM/gateway device entry."""
     url = f"{cfg['base']}/proxy/network/api/s/{cfg['site']}/stat/device"
     r = session.get(url, timeout=15)
@@ -338,8 +387,11 @@ def _fetch_udm_device(session: requests.Session, cfg: dict) -> dict:
     gateway = select_gateway(r.json().get("data", []))
     if gateway is None:
         raise LookupError("No gateway device found")
-    if not has_wan(gateway):
-        raise LookupError("No WAN interface (wan1/wan2) found on gateway")
+    if not allow_no_wan and not has_wan(gateway):
+        raise LookupError(
+            "No WAN interface (wan1/wan2) found on gateway; "
+            "define the WAN port manually in the module settings"
+        )
     return gateway
 
 
