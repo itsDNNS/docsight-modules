@@ -2,7 +2,7 @@
   "id": "community.udm_wan_monitor",
   "name": "UniFi WAN-Monitor",
   "description": "Überwacht WAN1 und WAN2 eines Ubiquiti UDM- oder UCG-Gateways und erzeugt Events im globalen DOCSight-Log.",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "author": "Oggy512",
   "minAppVersion": "2026.2",
   "type": "integration",

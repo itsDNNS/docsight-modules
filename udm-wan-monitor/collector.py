@@ -1,5 +1,5 @@
 """
-UniFi WAN Monitor — Collector  v3.2.0
+UniFi WAN Monitor — Collector  v3.2.1
 
 Polls /proxy/network/api/s/{site}/stat/device and extracts WAN status
 from the UDM/UCG gateway device entry.
@@ -378,6 +378,14 @@ def build_wan_ports(device: dict, parsed: dict, extra_ports: list[dict]) -> list
     return rows
 
 
+def _global_ipv6(addresses) -> str | None:
+    for addr in addresses or []:
+        a = str(addr).strip().lower()
+        if a and not a.startswith(("fe8", "fe9", "fea", "feb")):
+            return str(addr).strip()
+    return None
+
+
 def parse_device(d: dict) -> dict:
     """
     Parse a UDM stat/device entry into a structured dict.
@@ -405,10 +413,11 @@ def parse_device(d: dict) -> dict:
         geo_entry = geo.get(geo_key, {})
 
         return {
-            "ip":           geo_entry.get("address") or raw.get("ip"),
+            "ip":           raw.get("ip") or geo_entry.get("address"),
+            "ip_public":    geo_entry.get("address"),
             "ip_local":     raw.get("ip"),
             "netmask":      raw.get("netmask"),
-            "ipv6":         (raw.get("ipv6") or [None])[0],
+            "ipv6":         _global_ipv6(raw.get("ipv6")),
             "up":           raw.get("up"),
             "alive":        lwi_entry.get("alive"),
             "online":       lws.get(lws_key) == "online",

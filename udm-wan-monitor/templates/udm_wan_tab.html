@@ -175,6 +175,7 @@
     </div>
     <div class="metrics">
       <div class="metric"><span class="ml">{{ T('label_ip', 'IP') }}</span>           <span class="mv" id="w1-ip">—</span></div>
+      <div class="metric" id="w1-ippub-row" style="display:none;"><span class="ml">{{ T('label_ip_public', 'Public IP') }}</span> <span class="mv" id="w1-ippub">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_ipv6', 'IPv6') }}</span>        <span class="mv" id="w1-ip6">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_dns', 'DNS') }}</span>           <span class="mv" id="w1-dns">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_isp', 'ISP') }}</span>           <span class="mv" id="w1-isp">—</span></div>
@@ -221,6 +222,7 @@
     </div>
     <div class="metrics">
       <div class="metric"><span class="ml">{{ T('label_ip', 'IP') }}</span>           <span class="mv" id="w2-ip">—</span></div>
+      <div class="metric" id="w2-ippub-row" style="display:none;"><span class="ml">{{ T('label_ip_public', 'Public IP') }}</span> <span class="mv" id="w2-ippub">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_ipv6', 'IPv6') }}</span>        <span class="mv" id="w2-ip6">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_dns', 'DNS') }}</span>           <span class="mv" id="w2-dns">—</span></div>
       <div class="metric"><span class="ml">{{ T('label_isp', 'ISP') }}</span>           <span class="mv" id="w2-isp">—</span></div>
@@ -414,6 +416,12 @@ function fillWan(px, w) {
   if(!w) return;
   txt(px+'-ifname', w.ifname);
   txt(px+'-ip',    w.ip);
+  const pubRow=el(px+'-ippub-row');
+  if(pubRow){
+    const showPub=!!w.ip_public && w.ip_public!==w.ip;
+    pubRow.style.display=showPub?'':'none';
+    if(showPub) txt(px+'-ippub', w.ip_public);
+  }
   txt(px+'-ip6',   w.ipv6);
   txt(px+'-dns',   w.dns);
   txt(px+'-isp',   w.isp && w.city ? w.isp+' ('+w.city+')' : (w.isp||w.city||null));
