@@ -24,7 +24,7 @@
           </div>
         </div>
       </div>
-      <a href="/udm-wan" class="btn btn-ghost btn-sm" style="text-decoration:none; gap:6px;">
+      <a href="udm-wan" class="btn btn-ghost btn-sm" style="text-decoration:none; gap:6px;">
         <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i>
         {{ t.get('community.udm_wan_monitor.open_dashboard', 'Dashboard') }}
       </a>
@@ -217,6 +217,9 @@
 
 <script>
 (function () {
+  function apiUrl(p) {
+    return typeof window.docsightUrl === 'function' ? window.docsightUrl(p) : location.pathname.replace(/\/[^\/]*$/, '') + p;
+  }
   async function udmWanTest() {
     var btn = document.getElementById('udm-test-btn');
     var res = document.getElementById('udm-test-result');
@@ -225,7 +228,7 @@
     res.style.display = 'none';
 
     try {
-      var r = await fetch('/api/udm-wan/test', { method: 'POST' });
+      var r = await fetch(apiUrl('/api/udm-wan/test'), { method: 'POST' });
       var d = await r.json();
       if (d.ok) {
         res.textContent = '';

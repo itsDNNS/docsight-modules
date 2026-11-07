@@ -1,5 +1,5 @@
 """
-UniFi WAN Monitor — Flask Routes  v3.3.0
+UniFi WAN Monitor — Flask Routes  v3.3.1
 
   GET  /udm-wan                 → Standalone dashboard page
   GET  /api/udm-wan/status      → Latest cached data (JSON)
@@ -7,7 +7,9 @@ UniFi WAN Monitor — Flask Routes  v3.3.0
   POST /api/udm-wan/test        → Live connection test (JSON)
 """
 
+import json
 import logging
+import os
 from datetime import datetime, timezone
 
 import requests as req
@@ -24,6 +26,14 @@ bp = Blueprint(
 )
 
 # ── Lazy helpers ──────────────────────────────────────────────────────────────
+
+def _module_version():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "manifest.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("version")
+    except (OSError, ValueError):
+        return None
 
 def _cfg():
     from app.web import get_config_manager  # noqa: PLC0415
@@ -144,7 +154,11 @@ def api_detail():
     except PermissionError:
         _drop_session()
         return jsonify({"ok": False, "error": "Session expired, retry"}), 401
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
+        message = _collector_mod().http_error_message(exc)
+        if message:
+            logger.warning("UDM detail fetch failed: %s", message)
+            return jsonify({"ok": False, "error": message}), 502
         logger.exception("UDM detail fetch failed")
         return jsonify({"ok": False, "error": "Internal error"}), 500
 
@@ -153,6 +167,7 @@ def api_detail():
     wan_ports = _collector.build_wan_ports(device, parsed, extra_ports_cfg)
     parsed["wan_ports"] = wan_ports
     parsed["primary_wan"] = _collector.primary_wan(_cfg())
+    parsed["module_version"] = _module_version()
 
     return jsonify({
         "ok":        True,
@@ -188,6 +203,10 @@ def api_test():
         return jsonify({"ok": False, "error": "Timeout"}), 504
     except LookupError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 404
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
+        message = _collector_mod().http_error_message(exc)
+        if message:
+            logger.warning("UDM WAN test failed: %s", message)
+            return jsonify({"ok": False, "error": message}), 502
         logger.exception("UDM WAN test failed")
         return jsonify({"ok": False, "error": "Internal error"}), 500
