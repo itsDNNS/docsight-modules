@@ -1,5 +1,5 @@
 """
-UniFi WAN Monitor — Flask Routes  v3.2.1
+UniFi WAN Monitor — Flask Routes  v3.3.0
 
   GET  /udm-wan                 → Standalone dashboard page
   GET  /api/udm-wan/status      → Latest cached data (JSON)
@@ -131,7 +131,9 @@ def api_detail():
         _collector = _collector_mod()
         _fetch_udm_device = _collector._fetch_udm_device
         parse_device = _collector.parse_device
-        device   = _fetch_udm_device(session, cfg)
+        device   = _fetch_udm_device(
+            session, cfg, allow_no_wan=bool(_collector.parse_extra_ports(_cfg()))
+        )
         parsed   = parse_device(device)
     except req.exceptions.ConnectionError:
         return jsonify({"ok": False, "error": "Connection failed"}), 502
@@ -146,17 +148,11 @@ def api_detail():
         logger.exception("UDM detail fetch failed")
         return jsonify({"ok": False, "error": "Internal error"}), 500
 
-    # ── Optional extra ports from config ────────────────────────────────────────
-    c = _cfg()
-    extra_ports_cfg = []
-    for i in (1, 2):
-        ifname = (c.get(f"udm_wan_extra_port{i}_ifname") or "").strip()
-        alias  = (c.get(f"udm_wan_extra_port{i}_alias")  or "").strip()
-        if ifname:
-            extra_ports_cfg.append({"ifname": ifname.lower(), "alias": alias or ifname})
+    extra_ports_cfg = _collector.parse_extra_ports(_cfg())
 
     wan_ports = _collector.build_wan_ports(device, parsed, extra_ports_cfg)
     parsed["wan_ports"] = wan_ports
+    parsed["primary_wan"] = _collector.primary_wan(_cfg())
 
     return jsonify({
         "ok":        True,
@@ -177,7 +173,9 @@ def api_test():
         session = _collector._login(cfg)
         _fetch_udm_device = _collector._fetch_udm_device
         parse_device = _collector.parse_device
-        device  = _fetch_udm_device(session, cfg)
+        device  = _fetch_udm_device(
+            session, cfg, allow_no_wan=bool(_collector.parse_extra_ports(_cfg()))
+        )
         parsed  = parse_device(device)
         return jsonify({
             "ok":        True,
