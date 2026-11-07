@@ -17,7 +17,7 @@ DOCSight can install catalog modules from **Settings > Extensions > Community Mo
 | Module | Type | What it adds | Requirements |
 |--------|------|--------------|--------------|
 | [VF Kabel Deutschland Community Thresholds](thresholds-vfkd-community/) | `analysis` | Regional signal thresholds based on community recommendations for Vodafone/Kabel Deutschland cable connections | DOCSight 2026.2+ |
-| [UDM WAN-Monitor](udm-wan-monitor/) | `integration` | WAN1/WAN2 status collection for Ubiquiti UDM Pro/SE setups, with DOCSight events and dashboard surfaces | DOCSight 2026.2+, UDM access on the local network |
+| [UniFi WAN-Monitor](udm-wan-monitor/) | `integration` | WAN1/WAN2 status collection for Ubiquiti UDM Pro/SE and Cloud Gateway (UCG) setups, with DOCSight events and dashboard surfaces | DOCSight 2026.2+, UDM access on the local network |
 
 The catalog is curated, but modules can be maintained either in this repository or in an external contributor repository. See [Submitting a Module](#submitting-a-module) for the registry format and review checklist.
 
