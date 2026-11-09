@@ -1,5 +1,5 @@
 """
-UniFi WAN Monitor — Collector  v3.3.0
+UniFi WAN Monitor — Collector  v3.3.1
 
 Polls /proxy/network/api/s/{site}/stat/device and extracts WAN status
 from the UDM/UCG gateway device entry.
@@ -87,8 +87,12 @@ class UdmWanCollector(Collector):
         except requests.exceptions.Timeout:
             self._invalidate_session()
             return _result_failure(self.name, "Timeout")
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             self._invalidate_session()
+            message = http_error_message(exc)
+            if message:
+                logger.warning("UDM WAN collect failed: %s", message)
+                return _result_failure(self.name, message)
             logger.exception("UDM WAN collect failed")
             return _result_failure(self.name, "Internal error")
 
@@ -368,6 +372,20 @@ def parse_extra_ports(cfg) -> list[dict]:
         if len(ports) >= MAX_EXTRA_PORTS:
             break
     return ports
+
+
+def http_error_message(exc) -> str | None:
+    """Readable text for an HTTP error from the gateway, or None if exc has no HTTP response."""
+    code = getattr(getattr(exc, "response", None), "status_code", None)
+    if not isinstance(code, int):
+        return None
+    hints = {
+        401: "wrong credentials",
+        403: "access denied or login temporarily blocked",
+        429: "login rate limit, try again in a few minutes",
+    }
+    hint = hints.get(code)
+    return f"Gateway returned HTTP {code} ({hint})" if hint else f"Gateway returned HTTP {code}"
 
 
 def has_wan(device: dict) -> bool:

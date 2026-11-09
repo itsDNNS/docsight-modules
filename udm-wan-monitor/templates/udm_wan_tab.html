@@ -122,7 +122,7 @@
 {# ── Header ────────────────────────────────────────────────────────────────── #}
 <div class="udm-hdr">
   <div class="udm-title"><i data-lucide="router"></i> UniFi WAN-Monitor</div>
-  <div class="udm-ver">v3.1.1</div>
+  <div class="udm-ver" id="udm-ver"></div>
   <div class="udm-sub" id="udm-sub">{{ T('device_subtitle', 'Ubiquiti Gateway') }}</div>
 </div>
 
@@ -359,6 +359,7 @@ const f   = (v,fb='—') => (v!==null&&v!==undefined&&v!=='') ? String(v) : fb;
 const esc = s => { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; };
 const fe  = (v,fb='—') => esc(f(v,fb));
 const el  = id => document.getElementById(id);
+const apiUrl = p => typeof window.docsightUrl==='function' ? window.docsightUrl(p) : location.pathname.replace(/\/[^\/]*$/,'')+p;
 const txt = (id,v) => { const e=el(id); if(e) e.textContent=f(v); };
 
 const fBytes = b => {
@@ -489,7 +490,7 @@ function fillPorts(ports) {
 
 async function refreshEvents() {
   try {
-    const r=await fetch('/api/events?event_type=udm_wan&limit=100');
+    const r=await fetch(apiUrl('/api/events?event_type=udm_wan&limit=100'));
     const d=await r.json();
     const tbody=el('ev-tbody'), cnt=el('ev-count'); if(!tbody) return;
     const evs=d.events||[];
@@ -514,7 +515,7 @@ async function refreshEvents() {
 async function udmLoad() {
   const errEl=el('udm-err'), dbg=el('udm-debug');
   try {
-    const r=await fetch('/api/udm-wan/detail');
+    const r=await fetch(apiUrl('/api/udm-wan/detail'));
     const d=await r.json();
     if(dbg&&dbg.style.display!=='none') dbg.textContent=JSON.stringify(d,null,2);
     if(!d.ok){
@@ -527,6 +528,7 @@ async function udmLoad() {
     markPrimary(d.primary_wan||null);
     fillDevice(d.device||{});
     fillPorts(d.wan_ports||[]);
+    const ver=el('udm-ver'); if(ver&&d.module_version) ver.textContent='v'+d.module_version;
     const ts=el('udm-last-ts');
     if(ts) ts.textContent=new Date(d.timestamp).toLocaleTimeString();
   } catch(e){
