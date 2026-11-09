@@ -102,6 +102,17 @@ class UdmWanCollectorTests(unittest.TestCase):
         self.assertIsNone(self.c.primary_wan({"udm_wan_primary": "eth4"}))
         self.assertIsNone(self.c.primary_wan({}))
 
+    def test_gateway_http_errors_get_a_readable_message(self):
+        def error(code):
+            exc = Exception()
+            exc.response = type("Response", (), {"status_code": code})()
+            return exc
+
+        self.assertEqual(self.c.http_error_message(error(429)),
+                         "Gateway returned HTTP 429 (login rate limit, try again in a few minutes)")
+        self.assertEqual(self.c.http_error_message(error(500)), "Gateway returned HTTP 500")
+        self.assertIsNone(self.c.http_error_message(ValueError("boom")))
+
 
 if __name__ == "__main__":
     unittest.main()
