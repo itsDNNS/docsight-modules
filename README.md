@@ -558,6 +558,7 @@ Before opening your PR, verify:
 - [ ] **Auth on all routes** — every `@bp.route` must have `@require_auth` (import from `app.web`)
 - [ ] **No credentials in HTML** — password/token fields must use `value=""`, `data-config-secret="true"`, and conditional `data-saved-secret="true"` metadata, never `value="{{ config.password }}"`
 - [ ] **No inline JavaScript** — no inline `<script>` blocks, `on*=` attributes or `javascript:` URLs in templates; put the code in `static/` (see [`static`](#static--css--javascript))
+- [ ] **Icons from DOCSight's set** — DOCSight ships only the [Lucide](https://lucide.dev) icons it uses itself (`app/static/vendor/lucide.min.js`); any other `data-lucide` name shows a placeholder, so pick icons from that file
 - [ ] **Escape dynamic content** — any value from API responses inserted via `innerHTML` must be HTML-escaped; use `textContent` where possible
 - [ ] **English API errors** — error messages returned by API endpoints must be English (UI translations go in i18n files)
 - [ ] **No exception details in responses** — use generic error messages ("Connection failed"), log details server-side with `logger.exception()`
