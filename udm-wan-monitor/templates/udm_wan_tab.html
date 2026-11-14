@@ -1,10 +1,10 @@
 {#
-  UniFi WAN Monitor — Tab Template  v3.1.1
+  UniFi WAN Monitor — Tab Template  v3.3.2
   Included via {% include %} into DOCSight's index.html.
   All user-visible strings use {{ t['community.udm_wan_monitor.key'] or 'English fallback' }}
   so they are translated via i18n/de.json, fr.json, es.json automatically.
-  JavaScript strings are injected from Jinja2 into a single JS config object
-  so they follow the same translation path without duplicating logic.
+  JavaScript strings are rendered by Jinja2 into a JSON data block that
+  static/main.js reads, so they follow the same translation path.
 #}
 <div class="view-content" id="udm-wan-view">
 <style>
@@ -130,10 +130,10 @@
   <span class="udm-ts">{{ T('last_update', 'Last update') }}: <strong id="udm-last-ts">—</strong></span>
   <div style="display:flex;gap:.4rem;align-items:center;">
     <span id="udm-err" style="font-size:.77rem;color:var(--crit,#ef4444);display:none;"></span>
-    <button class="btn btn-ghost btn-sm" onclick="udmToggleDebug()">
+    <button class="btn btn-ghost btn-sm" id="udm-debug-btn">
       <i data-lucide="bug" style="width:13px;height:13px;"></i>
     </button>
-    <button class="btn btn-ghost btn-sm" onclick="udmLoad()">
+    <button class="btn btn-ghost btn-sm" id="udm-refresh-btn">
       <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i>
       {{ T('refresh', 'Refresh') }}
     </button>
@@ -325,243 +325,19 @@
   </div>
 </div>
 
+{# All translatable strings for static/main.js — rendered once by Jinja2 #}
+<script type="application/json" id="udm-wan-i18n">{{ {
+  'up':        t.get('community.udm_wan_monitor.pill_up',      'UP'),
+  'down':      t.get('community.udm_wan_monitor.pill_down',    'DOWN'),
+  'ok':        t.get('community.udm_wan_monitor.pill_ok',      'OK'),
+  'fail':      t.get('community.udm_wan_monitor.pill_fail',    'FAIL'),
+  'online':    t.get('community.udm_wan_monitor.pill_online',  'Online'),
+  'offline':   t.get('community.udm_wan_monitor.pill_offline', 'Offline'),
+  'active':    t.get('community.udm_wan_monitor.label_active',  'ACTIVE'),
+  'standby':   t.get('community.udm_wan_monitor.label_standby','STANDBY'),
+  'no_ports':  t.get('community.udm_wan_monitor.no_port_data', 'No port data available'),
+  'no_events': t.get('community.udm_wan_monitor.no_events',    'No WAN events recorded yet.'),
+  'entries':   t.get('community.udm_wan_monitor.entries',      'entries'),
+} | tojson }}</script>
+
 </div>{# /view-content #}
-
-{#
-  JS strings are passed via a single Jinja2-rendered config object.
-  This avoids duplicating translation logic in JavaScript.
-#}
-<script>
-(function(){
-'use strict';
-if(window._udmWanInit) return;
-window._udmWanInit = true;
-
-// All translatable strings for JS — rendered once by Jinja2
-const L = {
-  up:        {{ t.get('community.udm_wan_monitor.pill_up',      'UP')       | tojson }},
-  down:      {{ t.get('community.udm_wan_monitor.pill_down',    'DOWN')     | tojson }},
-  ok:        {{ t.get('community.udm_wan_monitor.pill_ok',      'OK')       | tojson }},
-  fail:      {{ t.get('community.udm_wan_monitor.pill_fail',    'FAIL')     | tojson }},
-  online:    {{ t.get('community.udm_wan_monitor.pill_online',  'Online')   | tojson }},
-  offline:   {{ t.get('community.udm_wan_monitor.pill_offline', 'Offline')  | tojson }},
-  active:    {{ t.get('community.udm_wan_monitor.label_active',  'ACTIVE')  | tojson }},
-  standby:   {{ t.get('community.udm_wan_monitor.label_standby','STANDBY')  | tojson }},
-  no_ports:  {{ t.get('community.udm_wan_monitor.no_port_data', 'No port data available') | tojson }},
-  no_events: {{ t.get('community.udm_wan_monitor.no_events',    'No WAN events recorded yet.') | tojson }},
-  entries:   {{ t.get('community.udm_wan_monitor.entries',      'entries')  | tojson }},
-};
-
-const REFRESH_MS = 30_000;
-let _timer = null;
-
-const f   = (v,fb='—') => (v!==null&&v!==undefined&&v!=='') ? String(v) : fb;
-const esc = s => { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; };
-const fe  = (v,fb='—') => esc(f(v,fb));
-const el  = id => document.getElementById(id);
-const apiUrl = p => typeof window.docsightUrl==='function' ? window.docsightUrl(p) : location.pathname.replace(/\/[^\/]*$/,'')+p;
-const txt = (id,v) => { const e=el(id); if(e) e.textContent=f(v); };
-
-const fBytes = b => {
-  if(b==null) return '—';
-  const n=+b; if(isNaN(n)||n<0) return '—';
-  if(n<1024)       return n+' B';
-  if(n<1048576)    return (n/1024).toFixed(1)+' KB';
-  if(n<1073741824) return (n/1048576).toFixed(1)+' MB';
-  return (n/1073741824).toFixed(2)+' GB';
-};
-const fUp  = s => {
-  if(!s||s<=0) return '—';
-  const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
-  return [d&&d+'d',h&&h+'h',m+'min'].filter(Boolean).join(' ');
-};
-const fSpd  = v => { if(v==null) return '—'; const n=+v; if(isNaN(n)) return '—'; return n>=1000?(n/1000)+' Gbit/s':n+' Mbit/s'; };
-const fPct  = v => v==null?'—':parseFloat(v).toFixed(1)+' %';
-const fTmp  = v => v==null?'—':parseFloat(v).toFixed(1)+' °C';
-
-function gauge(id, pct) {
-  const b=el(id); if(!b) return;
-  const p=Math.min(100,Math.max(0,parseFloat(pct)||0));
-  b.style.width=p+'%';
-  b.className='gf '+(p>=90?'gf-crit':p>=75?'gf-warn':'gf-ok');
-}
-
-function pill(pillId, txtId, isOk, labelOk, labelBad) {
-  const p=el(pillId),t=el(txtId); if(!p||!t) return;
-  if(isOk===null||isOk===undefined){ p.className='spill s-unk'; t.textContent='?'; return; }
-  p.className='spill '+(isOk?'s-ok':'s-bad');
-  t.textContent=isOk?labelOk:labelBad;
-}
-
-function setRole(px, w) {
-  const rolePill=el(px+'-role'), roleTxt=el(px+'-role-txt');
-  if(!rolePill||!roleTxt) return;
-  const fullyHealthy = w && w.up && w.alive && w.online;
-  if(!fullyHealthy || w.is_uplink===null || w.is_uplink===undefined){
-    rolePill.style.display='none'; return;
-  }
-  rolePill.style.display='inline-flex';
-  if(w.is_uplink){
-    rolePill.className='spill s-active';
-    rolePill.querySelector('.sdot').style.display='inline-block';
-    roleTxt.textContent=L.active;
-  } else {
-    rolePill.className='spill s-standby';
-    rolePill.querySelector('.sdot').style.display='none';
-    roleTxt.textContent=L.standby;
-  }
-}
-
-function fillWan(px, w) {
-  if(w && !w.ifname) w=null;
-  pill(px+'-link',   px+'-link-txt',   w&&w.up,     L.up,     L.down);
-  pill(px+'-alive',  px+'-alive-txt',  w&&w.alive,  L.ok,     L.fail);
-  pill(px+'-online', px+'-online-txt', w&&w.online, L.online, L.offline);
-  setRole(px, w);
-  if(!w) return;
-  txt(px+'-ifname', w.ifname);
-  txt(px+'-ip',    w.ip);
-  const pubRow=el(px+'-ippub-row');
-  if(pubRow){
-    const showPub=!!w.ip_public && w.ip_public!==w.ip;
-    pubRow.style.display=showPub?'':'none';
-    if(showPub) txt(px+'-ippub', w.ip_public);
-  }
-  txt(px+'-ip6',   w.ipv6);
-  txt(px+'-dns',   w.dns);
-  txt(px+'-isp',   w.isp && w.city ? w.isp+' ('+w.city+')' : (w.isp||w.city||null));
-  const typ = w.type ? (w.media ? w.type.toUpperCase()+' / '+w.media : w.type.toUpperCase()) : null;
-  txt(px+'-type',  typ);
-  txt(px+'-lat',   w.latency!=null ? w.latency+' ms' : null);
-  txt(px+'-avail', w.availability!=null ? w.availability+' %' : null);
-  const ab=el(px+'-avail-bar');
-  if(ab) ab.style.width=(w.availability!=null?Math.min(100,w.availability):0)+'%';
-  txt(px+'-rx',  w.rx_bytes_r!=null ? fBytes(w.rx_bytes_r)+'/s' : null);
-  txt(px+'-tx',  w.tx_bytes_r!=null ? fBytes(w.tx_bytes_r)+'/s' : null);
-  txt(px+'-spd', fSpd(w.speed));
-}
-
-function markPrimary(primary) {
-  ['w1','w2'].forEach(function(px){
-    const isPrimary = (px==='w1'&&primary==='wan1') || (px==='w2'&&primary==='wan2');
-    const badge=el(px+'-primary'), card=el(px+'-card');
-    if(badge) badge.style.display=isPrimary?'inline-flex':'none';
-    if(card) card.style.order=isPrimary?'-1':'0';
-  });
-}
-
-function fillDevice(dev) {
-  if(!dev) return;
-  txt('dev-model',  dev.model);
-  txt('dev-name',   dev.name);
-  txt('dev-fw',     dev.version);
-  txt('dev-uptime', fUp(dev.uptime));
-  txt('dev-cpu',    fPct(dev.cpu_pct));
-  txt('dev-mem',    fPct(dev.mem_pct));
-  txt('dev-temp',   fTmp(dev.temperature));
-  txt('dev-lan',    dev.lan_clients!=null ? String(dev.lan_clients) : null);
-  gauge('cpu-bar',  dev.cpu_pct);
-  gauge('mem-bar',  dev.mem_pct);
-  const sub=el('udm-sub');
-  if(sub&&dev.model) sub.textContent=dev.name?dev.name+' ('+dev.model+')':dev.model;
-}
-
-function fillPorts(ports) {
-  const tbody=el('port-tbody'); if(!tbody) return;
-  if(!ports||!ports.length){
-    tbody.innerHTML='<tr><td colspan="13" class="t-empty">'+esc(L.no_ports)+'</td></tr>'; return;
-  }
-  tbody.innerHTML=ports.map(function(p){ return '<tr>'
-    +'<td><strong style="font-family:inherit;">'+fe(p.label||p.name)+'</strong></td>'
-    +'<td>'+fe(p.ifname)+'</td>'
-    +'<td class="'+(p.up?'t-up':'t-dn')+'">'+(p.up?'▲ '+esc(L.up):'▼ '+esc(L.down))+'</td>'
-    +'<td>'+fSpd(p.speed)+'</td>'
-    +'<td>'+(p.full_duplex!=null?(p.full_duplex?'Full':'Half'):'—')+'</td>'
-    +'<td>'+fBytes(p.rx_bytes_r)+'/s</td>'
-    +'<td>'+fBytes(p.tx_bytes_r)+'/s</td>'
-    +'<td>'+fBytes(p.rx_bytes)+'</td>'
-    +'<td>'+fBytes(p.tx_bytes)+'</td>'
-    +'<td>'+fe(p.rx_errors,'0')+'</td>'
-    +'<td>'+fe(p.tx_errors,'0')+'</td>'
-    +'<td>'+fe(p.rx_dropped,'0')+'</td>'
-    +'<td>'+fe(p.tx_dropped,'0')+'</td>'
-    +'</tr>'; }).join('');
-}
-
-async function refreshEvents() {
-  try {
-    const r=await fetch(apiUrl('/api/events?event_type=udm_wan&limit=100'));
-    const d=await r.json();
-    const tbody=el('ev-tbody'), cnt=el('ev-count'); if(!tbody) return;
-    const evs=d.events||[];
-    if(!evs.length){
-      tbody.innerHTML='<tr><td colspan="3" class="t-empty">'+esc(L.no_events)+'</td></tr>';
-      if(cnt) cnt.textContent=''; return;
-    }
-    if(cnt) cnt.textContent=evs.length+' '+L.entries;
-    tbody.innerHTML=evs.map(function(ev){
-      var ts=esc(new Date(ev.timestamp).toLocaleString());
-      var sev=ev.severity||'info';
-      var cls=sev==='critical'?'ev-crit':sev==='warning'?'ev-warn':'ev-info';
-      return '<tr>'
-        +'<td style="white-space:nowrap;">'+ts+'</td>'
-        +'<td>'+esc(ev.message||'')+'</td>'
-        +'<td><span class="ev-badge '+cls+'">'+esc(sev)+'</span></td>'
-        +'</tr>';
-    }).join('');
-  } catch(e){ console.warn('[UDM WAN] events error',e); }
-}
-
-async function udmLoad() {
-  const errEl=el('udm-err'), dbg=el('udm-debug');
-  try {
-    const r=await fetch(apiUrl('/api/udm-wan/detail'));
-    const d=await r.json();
-    if(dbg&&dbg.style.display!=='none') dbg.textContent=JSON.stringify(d,null,2);
-    if(!d.ok){
-      if(errEl){errEl.textContent='⚠ '+d.error;errEl.style.display='';}
-      return;
-    }
-    if(errEl) errEl.style.display='none';
-    fillWan('w1', d.wan1||null);
-    fillWan('w2', d.wan2||null);
-    markPrimary(d.primary_wan||null);
-    fillDevice(d.device||{});
-    fillPorts(d.wan_ports||[]);
-    const ver=el('udm-ver'); if(ver&&d.module_version) ver.textContent='v'+d.module_version;
-    const ts=el('udm-last-ts');
-    if(ts) ts.textContent=new Date(d.timestamp).toLocaleTimeString();
-  } catch(e){
-    if(errEl){errEl.textContent='⚠ '+e;errEl.style.display='';}
-    console.warn('[UDM WAN] detail error',e);
-  }
-}
-
-function udmToggleDebug(){
-  const dbg=el('udm-debug'); if(!dbg) return;
-  dbg.style.display=dbg.style.display==='none'?'block':'none';
-  if(dbg.style.display!=='none') udmLoad();
-}
-
-async function udmRefreshAll(){ await Promise.all([udmLoad(),refreshEvents()]); }
-window.udmRefresh=udmRefreshAll;
-window.udmToggleDebug=udmToggleDebug;
-
-function startPolling(){
-  udmRefreshAll();
-  if(_timer) clearInterval(_timer);
-  _timer=setInterval(udmRefreshAll,REFRESH_MS);
-}
-
-const viewEl=document.getElementById('view-mod-community-udm_wan_monitor');
-if(viewEl){
-  new MutationObserver(()=>{
-    if(viewEl.classList.contains('active')) startPolling();
-    else { clearInterval(_timer);_timer=null; }
-  }).observe(viewEl,{attributes:true,attributeFilter:['class']});
-  if(viewEl.classList.contains('active')) startPolling();
-} else { startPolling(); }
-
-if(typeof lucide!=='undefined') lucide.createIcons();
-})();
-</script>

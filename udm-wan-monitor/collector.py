@@ -1,5 +1,5 @@
 """
-UniFi WAN Monitor — Collector  v3.3.1
+UniFi WAN Monitor — Collector  v3.3.2
 
 Polls /proxy/network/api/s/{site}/stat/device and extracts WAN status
 from the UDM/UCG gateway device entry.

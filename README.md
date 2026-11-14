@@ -415,6 +415,8 @@ Files are served at `/modules/<module-id>/static/`. Two files are auto-detected 
 
 Other static files (images, fonts, etc.) are accessible at their path but not auto-loaded.
 
+`main.js` is loaded on both the dashboard and the settings page, so only act on elements that exist on the current page. Keep all JavaScript in static files: templates must not contain executable inline `<script>` blocks, `on*=` attributes (such as `onclick`) or `javascript:` URLs, because DOCSight's Content-Security-Policy is moving to `script-src 'self'`. Bind events with `addEventListener` in your script and pass rendered values (such as translations) through `data-*` attributes or a `<script type="application/json">` block.
+
 ---
 
 ## Smart Capture Integration
@@ -555,6 +557,7 @@ Before opening your PR, verify:
 
 - [ ] **Auth on all routes** — every `@bp.route` must have `@require_auth` (import from `app.web`)
 - [ ] **No credentials in HTML** — password/token fields must use `value=""`, `data-config-secret="true"`, and conditional `data-saved-secret="true"` metadata, never `value="{{ config.password }}"`
+- [ ] **No inline JavaScript** — no inline `<script>` blocks, `on*=` attributes or `javascript:` URLs in templates; put the code in `static/` (see [`static`](#static--css--javascript))
 - [ ] **Escape dynamic content** — any value from API responses inserted via `innerHTML` must be HTML-escaped; use `textContent` where possible
 - [ ] **English API errors** — error messages returned by API endpoints must be English (UI translations go in i18n files)
 - [ ] **No exception details in responses** — use generic error messages ("Connection failed"), log details server-side with `logger.exception()`
