@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UniFi WAN-Monitor — DOCSight</title>
-  <link rel="stylesheet" href="static/css/fonts.css"      onerror="this.remove()">
-  <link rel="stylesheet" href="static/css/tokens.css"     onerror="this.remove()">
-  <link rel="stylesheet" href="static/css/components.css" onerror="this.remove()">
-  <link rel="stylesheet" href="static/css/main.css"       onerror="this.remove()">
+  <link rel="stylesheet" href="static/css/fonts.css">
+  <link rel="stylesheet" href="static/css/tokens.css">
+  <link rel="stylesheet" href="static/css/components.css">
+  <link rel="stylesheet" href="static/css/main.css">
   <style>
     /* Minimal fallback tokens in case DOCSight CSS is unavailable */
     :root {
@@ -43,19 +43,13 @@
     .btn-sm{padding:6px 12px;font-size:.75rem;min-height:32px;}
     .view-content{display:block;}
   </style>
-  <script src="static/vendor/lucide.min.js" onerror="window._noLucide=true"></script>
+  <script src="static/vendor/lucide.min.js"></script>
 </head>
 <body>
 <div class="standalone-page">
   {% include "udm_wan_tab.html" %}
 </div>
-<script>
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-  // Theme sync via cookie/localStorage if DOCSight sets it
-  try {
-    const stored = localStorage.getItem('docsight-theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', stored);
-  } catch(_) {}
-</script>
+<script src="modules/community.udm_wan_monitor/static/main.js"></script>
+<script src="modules/community.udm_wan_monitor/static/standalone.js"></script>
 </body>
 </html>
