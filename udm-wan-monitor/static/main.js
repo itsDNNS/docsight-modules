@@ -1,5 +1,5 @@
 /*
-  UniFi WAN Monitor — dashboard tab and settings panel  v3.3.2
+  UniFi WAN Monitor — dashboard tab and settings panel  v3.3.3
   Auto-loaded by DOCSight on the dashboard and the settings page, and by the
   standalone page. Each part only runs when its elements are on the page.
 */
@@ -258,7 +258,7 @@ function initConnectionTest() {
       } else {
         res.textContent = '';
         var icon = document.createElement('i');
-        icon.setAttribute('data-lucide', 'x-circle');
+        icon.setAttribute('data-lucide', 'alert-circle');
         icon.style.cssText = 'width:16px;height:16px;flex-shrink:0;';
         res.appendChild(icon);
         var span = document.createElement('span');
