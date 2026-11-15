@@ -1,5 +1,5 @@
 """
-UniFi WAN Monitor — Flask Routes  v3.3.3
+UniFi WAN Monitor — Flask Routes  v3.3.4
 
   GET  /udm-wan                 → Standalone dashboard page
   GET  /api/udm-wan/status      → Latest cached data (JSON)

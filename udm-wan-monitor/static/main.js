@@ -1,5 +1,5 @@
 /*
-  UniFi WAN Monitor — dashboard tab and settings panel  v3.3.3
+  UniFi WAN Monitor — dashboard tab and settings panel  v3.3.4
   Auto-loaded by DOCSight on the dashboard and the settings page, and by the
   standalone page. Each part only runs when its elements are on the page.
 */
@@ -21,6 +21,8 @@ let _timer = null;
 
 const f   = (v,fb='—') => (v!==null&&v!==undefined&&v!=='') ? String(v) : fb;
 const esc = s => { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; };
+// DOCSight's Trusted Types policy (older DOCSight versions have none: plain strings).
+const html = s => (window.docsightHTML || String)(s);
 const fe  = (v,fb='—') => esc(f(v,fb));
 const el  = id => document.getElementById(id);
 const txt = (id,v) => { const e=el(id); if(e) e.textContent=f(v); };
@@ -132,9 +134,9 @@ function fillDevice(dev) {
 function fillPorts(ports) {
   const tbody=el('port-tbody'); if(!tbody) return;
   if(!ports||!ports.length){
-    tbody.innerHTML='<tr><td colspan="13" class="t-empty">'+esc(L.no_ports)+'</td></tr>'; return;
+    tbody.innerHTML=html('<tr><td colspan="13" class="t-empty">'+esc(L.no_ports)+'</td></tr>'); return;
   }
-  tbody.innerHTML=ports.map(function(p){ return '<tr>'
+  tbody.innerHTML=html(ports.map(function(p){ return '<tr>'
     +'<td><strong style="font-family:inherit;">'+fe(p.label||p.name)+'</strong></td>'
     +'<td>'+fe(p.ifname)+'</td>'
     +'<td class="'+(p.up?'t-up':'t-dn')+'">'+(p.up?'▲ '+esc(L.up):'▼ '+esc(L.down))+'</td>'
@@ -148,7 +150,7 @@ function fillPorts(ports) {
     +'<td>'+fe(p.tx_errors,'0')+'</td>'
     +'<td>'+fe(p.rx_dropped,'0')+'</td>'
     +'<td>'+fe(p.tx_dropped,'0')+'</td>'
-    +'</tr>'; }).join('');
+    +'</tr>'; }).join(''));
 }
 
 async function refreshEvents() {
@@ -158,11 +160,11 @@ async function refreshEvents() {
     const tbody=el('ev-tbody'), cnt=el('ev-count'); if(!tbody) return;
     const evs=d.events||[];
     if(!evs.length){
-      tbody.innerHTML='<tr><td colspan="3" class="t-empty">'+esc(L.no_events)+'</td></tr>';
+      tbody.innerHTML=html('<tr><td colspan="3" class="t-empty">'+esc(L.no_events)+'</td></tr>');
       if(cnt) cnt.textContent=''; return;
     }
     if(cnt) cnt.textContent=evs.length+' '+L.entries;
-    tbody.innerHTML=evs.map(function(ev){
+    tbody.innerHTML=html(evs.map(function(ev){
       var ts=esc(new Date(ev.timestamp).toLocaleString());
       var sev=ev.severity||'info';
       var cls=sev==='critical'?'ev-crit':sev==='warning'?'ev-warn':'ev-info';
@@ -171,7 +173,7 @@ async function refreshEvents() {
         +'<td>'+esc(ev.message||'')+'</td>'
         +'<td><span class="ev-badge '+cls+'">'+esc(sev)+'</span></td>'
         +'</tr>';
-    }).join('');
+    }).join(''));
   } catch(e){ console.warn('[UDM WAN] events error',e); }
 }
 
