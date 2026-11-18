@@ -169,14 +169,19 @@ Your `routes.py` must export a Flask Blueprint named `bp` or `blueprint`:
 ```python
 from flask import Blueprint, jsonify
 
+from app.web import require_auth
+
 bp = Blueprint("mymodule_bp", __name__)
 
 @bp.route("/api/mymodule/data")
+@require_auth
 def api_data():
     return jsonify({"status": "ok"})
 ```
 
 The Blueprint is automatically registered with the Flask app. No URL prefix is added — you control the full path.
+
+Protect every route with `@require_auth`. API tokens may then read your `GET` routes, while any other method needs a signed-in browser session. Use `@require_auth(token_writes=True)` only for a write that integrations such as Home Assistant really need, and `@require_auth(session_only=True)` for routes tokens must not reach at all. DOCSight requires a sign-in for routes without `@require_auth`, but declare it anyway so the rule is visible in your code.
 
 **Accessing core services in routes:**
 
@@ -184,6 +189,7 @@ The Blueprint is automatically registered with the Flask app. No URL prefix is a
 from app.web import get_storage, get_config_manager
 
 @bp.route("/api/mymodule/data")
+@require_auth
 def api_data():
     storage = get_storage()       # SQLite storage instance
     config = get_config_manager() # Config manager instance
@@ -520,7 +526,7 @@ In both cases, the registry entry must point to an installable module directory 
 - Your module works locally with DOCSight
 - Your module has a README with setup, requirements, and support notes
 - Your `manifest.json` uses a unique ID that does not conflict with built-in DOCSight modules
-- Routes, collectors, settings forms, and stored configuration follow the safety checklist below
+- Routes, collectors, settings forms, and stored configuration follow the [pre-submission checklist](#pre-submission-checklist) below
 
 ### Steps
 
@@ -555,7 +561,7 @@ Modules reviewed and tested by the DOCSight team receive `"verified": true`. Unv
 
 Before opening your PR, verify:
 
-- [ ] **Auth on all routes** — every `@bp.route` must have `@require_auth` (import from `app.web`)
+- [ ] **Auth on all routes** — every `@bp.route` must have `@require_auth` (import from `app.web`); allow token writes with `token_writes=True` only where an integration needs them
 - [ ] **No credentials in HTML** — password/token fields must use `value=""`, `data-config-secret="true"`, and conditional `data-saved-secret="true"` metadata, never `value="{{ config.password }}"`
 - [ ] **No inline JavaScript** — no inline `<script>` blocks, `on*=` attributes or `javascript:` URLs in templates; put the code in `static/` (see [`static`](#static--css--javascript))
 - [ ] **Icons from DOCSight's set** — DOCSight ships only the [Lucide](https://lucide.dev) icons it uses itself (`app/static/vendor/lucide.min.js`); any other `data-lucide` name shows a placeholder, so pick icons from that file

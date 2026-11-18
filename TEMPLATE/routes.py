@@ -6,10 +6,13 @@ The variable must be named ``bp`` or ``blueprint``.
 
 from flask import Blueprint, jsonify
 
+from app.web import require_auth
+
 bp = Blueprint("example_bp", __name__)
 
 
 @bp.route("/api/example/hello")
+@require_auth
 def api_hello():
     """Example API endpoint."""
     return jsonify({"message": "Hello from the example module!"})
